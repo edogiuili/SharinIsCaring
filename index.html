@@ -87,6 +87,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges}
   background:var(--paper);border:calc(var(--s)*1.2px) solid var(--ink);border-radius:calc(var(--s)*3px);cursor:pointer;transition:transform .15s,box-shadow .2s,opacity .2s}
 .dopt:hover{transform:translateY(-2px)}
 .dopt b{font-size:1em} .dopt span{font-size:.7em;opacity:.6}
+.dopt span.votes{font-size:1.15em;font-weight:800;opacity:1;color:#5a2d82}
 .dopt.actual{background:#fff3c4;border-color:#c58a00;box-shadow:0 0 0 calc(var(--s)*2px) #ffd54f,0 0 calc(var(--s)*12px) #ffd54f}
 .dopt.dim{opacity:.45}
 .die{width:calc(var(--s)*34px);height:calc(var(--s)*34px)}
@@ -101,6 +102,10 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges}
 #dRes{font-size:.78em;line-height:1.35;min-height:5.5em;width:100%}
 #dRes .rh{font-weight:800;font-size:1.1em;margin-bottom:.2em}
 #dRes .ok{color:#2b8a3e} #dRes .no{color:#c0392b}
+.dlive{display:flex;align-items:center;justify-content:center;gap:calc(var(--s)*5px);margin-top:.3em}
+#dQr{width:calc(var(--s)*44px);height:calc(var(--s)*44px);background:#fff;padding:calc(var(--s)*2px);border-radius:calc(var(--s)*2px);flex:none}
+#dQr img,#dQr canvas{width:100%!important;height:100%!important}
+.dlv{text-align:center}
 .dbars{display:grid;gap:.2em;margin-top:.35em;text-align:left}
 .dbars .bar{grid-template-columns:5.5em 1fr 3em}
 #dHint{position:absolute;left:calc(var(--s)*8px);right:calc(var(--s)*8px);bottom:calc(var(--s)*4px);text-align:center;font-size:.78em;font-weight:700}
@@ -1260,16 +1265,43 @@ async function diceGame(){
     round++;
     sub.textContent=`Round ${round} · Score ${score}/${round-1}`;
     o6.className=o60.className='dopt'; res.innerHTML=''; hint.textContent='';
+    const tag6=o6.querySelector('span'), tag60=o60.querySelector('span');
+    tag6.textContent='press 1'; tag60.textContent='press 2'; tag6.className=tag60.className='';
     $('dSay').textContent=`I threw one die in secret. I call out…`;
     for(let i=0;i<12;i++){ num.textContent=1+Math.floor(Math.random()*60); sfx.blip(); await new Promise(r=>setTimeout(r,55)); }
     num.textContent=n; flash(num,'pop'); sfx.good();
-    hint.textContent=`Which die was it? Press 1 or 2 — or click a die`;
-    const guess=(await diceKey(['one','two']))==='one'?6:60, right=guess===die;
+
+    let guess, head;
+    const url=LIVE&&voteUrl();
+    if(url){   // the audience votes; the majority is the room's guess
+      const rid=Date.now();
+      res.innerHTML=`<div class="dlive"><div id="dQr"></div><div class="dlv"><div class="pcount" id="dCount">0<small>ANSWERS</small></div><div class="plive" id="dLive"></div></div></div>`;
+      makeQr($('dQr'),url);
+      const v=openVote(rid,'dice'+round,`Bayes rolled a ${n}. Which die did he throw?`,['The 6-sided die','The 60-sided die'],$('dCount'),$('dLive'));
+      tag6.textContent=tag60.textContent='vote on your phone';
+      hint.textContent=`Which die was it? Vote on your phone · SPACE: close voting`;
+      await diceKey(['ok']);
+      closeVote(rid,die===6?0:1);
+      const [a,b]=v.counts, tot=v.total, p6=tot?Math.round(100*a/tot):0, p60=tot?100-p6:0;
+      tag6.textContent=tot?`${p6}% of votes`:'no votes'; tag60.textContent=tot?`${p60}% of votes`:'no votes';
+      if(tot) tag6.className=tag60.className='votes';
+      guess=!tot||a===b?null:(a>b?6:60);
+      const share=guess===6?p6:p60;
+      head=guess===null
+        ?`<div class="rh">${tot?'A tie!':'No votes.'} It was the ${die}-sided die.</div>`
+        :guess===die
+          ?`<div class="rh ok">✓ Correct! ${share}% of you said the ${die}-sided die.</div>`
+          :`<div class="rh no">✗ ${share}% of you said ${guess}-sided. It was the ${die}-sided die.</div>`;
+    } else {
+      hint.textContent=`Which die was it? Press 1 or 2 — or click a die`;
+      guess=(await diceKey(['one','two']))==='one'?6:60;
+      head=`<div class="rh ${guess===die?'ok':'no'}">${guess===die?'✓ Correct!':'✗ Not this time.'} It was the ${die}-sided die.</div>`;
+    }
+    const right=guess===die;
     if(right) score++;
-    right?sfx.win():sfx.bad();
+    right?sfx.win():guess===null?sfx.good():sfx.bad();
     (die===6?o6:o60).classList.add('actual'); (die===6?o60:o6).classList.add('dim');
     sub.textContent=`Round ${round} · Score ${score}/${round}`;
-    const head=`<div class="rh ${right?'ok':'no'}">${right?'✓ Correct!':'✗ Not this time.'} It was the ${die}-sided die.</div>`;
     res.innerHTML=n>6
       ? head+`Only the 60-sided die can roll ${n}.<div class="dbars">${pct('6-sided',0)}${pct('60-sided',100)}</div>`
       : head+`Both dice can roll ${n}. But the 6-sided die rolls it 10× more often.`
@@ -1290,6 +1322,30 @@ function voteUrl(){
   if(/^https?:$/.test(location.protocol)) return new URL('vote.html',location.href).href;
   return C.voteUrl&&!/YOUR_/.test(C.voteUrl)?C.voteUrl:null;
 }
+function makeQr(el,url){
+  try{ new QRCode(el,{text:url,width:256,height:256,colorDark:'#1b1b2a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }
+  catch(e){ el.textContent='(QR library failed to load)'; }
+}
+// open a live round and keep the answer counter and connection status up to date; returns live {counts,total}
+function openVote(round,qid,q,options,countEl,liveEl){
+  const st={counts:options.map(()=>0),total:0};
+  const upd=()=>{
+    const m=LIVE.last;
+    if(m&&m.n===round&&Array.isArray(m.counts)){
+      if(m.total>st.total) sfx.blip();
+      st.counts=options.map((_,i)=>m.counts[i]||0); st.total=m.total;
+      countEl.firstChild.textContent=st.total;
+    }
+    if(LIVE.error){ liveEl.className='plive bad'; liveEl.textContent=LIVE.error; }
+    else if(LIVE.connected){ liveEl.className='plive ok'; liveEl.textContent=`● ${m?m.phones:0} phone${m&&m.phones===1?'':'s'} connected`; }
+    else { liveEl.className='plive'; liveEl.textContent='○ connecting…'; }
+  };
+  LIVE.onUpdate=upd;
+  LIVE.desire({t:'open',n:round,qid,q,options});
+  upd();
+  return st;
+}
+function closeVote(round,answer){ LIVE.onUpdate=null; LIVE.desire({t:'close',n:round,answer}); }
 async function runPoll(id){
   const Q=QUESTIONS[id]; if(!Q||flags['poll_'+id]) return;
   const B=BATTLES[id], prev=mode; mode='poll'; sfx.encounter();
@@ -1303,28 +1359,13 @@ async function runPoll(id){
   box.querySelectorAll('.popt').forEach((d,i)=>d.children[2].textContent=Q.options[i]);
   el.classList.remove('reveal','graded'); el.classList.remove('hidden'); flash($('pollHead'),'slidein');
 
-  let counts=Q.options.map(()=>0), total=0;
+  let vote={counts:Q.options.map(()=>0),total:0};
   const url=LIVE&&voteUrl(), round=Date.now();
   if(url){
     side.innerHTML=`<div id="pollQr"></div><div class="pscan">📱 Scan to answer</div><div class="purl"></div><div class="pcount" id="pollCount">0<small>ANSWERS</small></div><div class="plive" id="pollLive"></div>`;
     side.querySelector('.purl').textContent=url.replace(/^https?:\/\//,'');
-    try{ new QRCode($('pollQr'),{text:url,width:256,height:256,colorDark:'#1b1b2a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }
-    catch(e){ $('pollQr').textContent='(QR library failed to load)'; }
-    const upd=()=>{
-      const m=LIVE.last;
-      if(m&&m.n===round&&Array.isArray(m.counts)){
-        if(m.total>total) sfx.blip();
-        counts=Q.options.map((_,i)=>m.counts[i]||0); total=m.total;
-        $('pollCount').firstChild.textContent=total;
-      }
-      const lv=$('pollLive');
-      if(LIVE.error){ lv.className='plive bad'; lv.textContent=LIVE.error; }
-      else if(LIVE.connected){ lv.className='plive ok'; lv.textContent=`● ${m?m.phones:0} phone${m&&m.phones===1?'':'s'} connected`; }
-      else { lv.className='plive'; lv.textContent='○ connecting…'; }
-    };
-    LIVE.onUpdate=upd;
-    LIVE.desire({t:'open',n:round,qid:id,q:Q.q,options:Q.options});
-    upd();
+    makeQr($('pollQr'),url);
+    vote=openVote(round,id,Q.q,Q.options,$('pollCount'),$('pollLive'));
   } else {
     side.innerHTML=`<div class="pscan">✋ Show of hands</div><div class="poff">${LIVE?'Set <b>voteUrl</b> in live-config.js to show a QR code.':LIVE_OFF}</div>`;
   }
@@ -1332,7 +1373,8 @@ async function runPoll(id){
   await pollKey();
 
   // reveal
-  if(url){ LIVE.onUpdate=null; LIVE.desire({t:'close',n:round,answer:Q.correct}); }
+  if(url) closeVote(round,Q.correct);
+  const {counts,total}=vote;
   box.querySelectorAll('.popt').forEach((d,i)=>{
     d.querySelector('.pn').textContent=url?(total?Math.round(100*counts[i]/total)+'%':'0'):'';
     d.querySelector('.pf').style.width=url&&total?(100*counts[i]/total)+'%':'0';
