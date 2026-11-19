@@ -1,0 +1,1304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Occam's Quest</title>
+<style>
+:root{
+  --s:3; --fs:15px;
+  --ink:#1b1b2a; --paper:#fbf7e8; --rule:#c9bf9c;
+  --hp:#38b24a; --hpmid:#e3b21c; --hplow:#d23b2e;
+  --font: ui-monospace, "SF Mono", Menlo, Consolas, "Courier New", monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0e0f17;overflow:hidden;font-family:var(--font)}
+#wrap{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}
+#stage{position:relative;width:calc(var(--s)*272px);height:calc(var(--s)*208px);background:#000;
+  box-shadow:0 0 0 4px #000,0 0 0 7px #3a3d55,0 24px 80px rgba(0,0,0,.7);overflow:hidden;font-size:var(--fs);user-select:none}
+#world{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
+canvas{image-rendering:pixelated;image-rendering:crisp-edges}
+.hidden{display:none!important}
+.panel{background:var(--paper);color:var(--ink);border:calc(var(--s)*1.4px) solid var(--ink);border-radius:calc(var(--s)*3px);
+  box-shadow:inset 0 0 0 calc(var(--s)*1px) #fff,inset 0 0 0 calc(var(--s)*2px) var(--rule)}
+
+#dialog{position:absolute;left:calc(var(--s)*5px);right:calc(var(--s)*5px);bottom:calc(var(--s)*5px);min-height:calc(var(--s)*50px);
+  padding:calc(var(--s)*7px) calc(var(--s)*10px) calc(var(--s)*9px);line-height:1.45}
+#dName{position:absolute;top:calc(var(--s)*-8px);left:calc(var(--s)*8px);padding:calc(var(--s)*1.5px) calc(var(--s)*5px);
+  font-weight:700;font-size:.85em;background:var(--ink);color:var(--paper);border-radius:calc(var(--s)*2px)}
+.sys{color:#7a4b00;font-weight:700}
+.more{position:absolute;right:calc(var(--s)*7px);bottom:calc(var(--s)*3px);font-size:.8em;animation:bob .6s infinite alternate}
+@keyframes bob{to{transform:translateY(calc(var(--s)*1.5px))}}
+
+#hud{position:absolute;top:calc(var(--s)*4px);right:calc(var(--s)*4px);padding:calc(var(--s)*2px) calc(var(--s)*5px);
+  font-size:.72em;font-weight:700;display:flex;gap:calc(var(--s)*5px)}
+#banner{position:absolute;top:calc(var(--s)*4px);left:calc(var(--s)*4px);padding:calc(var(--s)*3px) calc(var(--s)*6px);
+  font-weight:700;font-size:.78em;transition:opacity .6s,transform .6s;opacity:0;transform:translateY(-10px);pointer-events:none}
+#banner.on{opacity:1;transform:none}
+
+
+
+/* lesson screen */
+#lesson{position:absolute;inset:0;background:linear-gradient(#bfe0ff 0%,#e9f5ff 30%,#cde9a8 30%,#a8d47a 100%);cursor:pointer}
+#lHead{position:absolute;left:calc(var(--s)*8px);top:calc(var(--s)*4px);right:calc(var(--s)*8px);height:calc(var(--s)*56px);display:flex;align-items:center;gap:calc(var(--s)*8px)}
+#lCv{height:calc(var(--s)*55px);flex:none}
+.lname{padding:calc(var(--s)*4px) calc(var(--s)*8px);flex:1}
+.lname .nm{font-weight:800;font-size:1.15em}
+.lname .sub{font-size:.75em;opacity:.7}
+.dots{font-size:1.1em;color:#c58a00;letter-spacing:.15em;margin-top:calc(var(--s)*1px)}
+#lCards{position:absolute;left:calc(var(--s)*6px);right:calc(var(--s)*6px);top:calc(var(--s)*63px);bottom:calc(var(--s)*16px);display:flex;flex-direction:column;gap:calc(var(--s)*3px)}
+.lcard{flex:1;display:flex;gap:calc(var(--s)*5px);align-items:center;background:var(--paper);color:var(--ink);border:calc(var(--s)*1.2px) solid var(--ink);border-radius:calc(var(--s)*3px);
+  padding:calc(var(--s)*3px) calc(var(--s)*6px);box-shadow:0 calc(var(--s)*1.5px) 0 rgba(0,0,0,.25)}
+.lcard.empty{background:rgba(255,255,255,.35);border-style:dashed;box-shadow:none;color:rgba(27,27,42,.55)}
+.lbody{flex:1;min-width:0}
+.lnum{flex:none;width:calc(var(--s)*16px);height:calc(var(--s)*16px);border-radius:50%;display:grid;place-items:center;background:#5a2d82;color:#fff;font-weight:800;font-size:1em}
+.lcard.empty .lnum{background:rgba(90,45,130,.35)}
+.lkind{font-size:.62em;font-weight:800;letter-spacing:.08em;color:#5a2d82}
+.lt{font-weight:800;font-size:1.05em;line-height:1.25}
+.ld{font-size:.92em;line-height:1.35;margin-top:.15em}
+.lmore{display:none;font-size:.74em;line-height:1.3;margin-top:.2em;opacity:.75}
+#lesson.detail .lmore{display:block}
+.bars{float:right;width:38%;display:grid;gap:.25em;margin:.2em 0 0 1em;font-size:.72em}
+.bar{display:grid;grid-template-columns:5.5em 1fr 3em;align-items:center;gap:.5em}
+.bar i{display:block;height:.9em;background:rgba(90,45,130,.15);border-radius:2px}
+.bar u{display:block;height:100%;background:#5a2d82;border-radius:2px}
+.bar b{text-align:right}
+.lq{font-weight:800;font-size:1.1em}
+#lCards.four{gap:calc(var(--s)*2px)}
+#lCards.four .lcard{padding-top:calc(var(--s)*2px);padding-bottom:calc(var(--s)*2px)}
+#lCards.four .ld{font-size:.86em;line-height:1.28}
+#lCards.four .lt{font-size:1em}
+/* one card at a time: illustration + text */
+.lcard.solo{display:grid;grid-template-columns:48% 1fr;grid-template-rows:minmax(0,1fr);gap:calc(var(--s)*7px);align-items:center;padding:calc(var(--s)*5px) calc(var(--s)*7px)}
+.lart{align-self:stretch;min-height:0;display:flex;align-items:center;justify-content:center;background:#fff;border:calc(var(--s)*1px) solid var(--rule);border-radius:calc(var(--s)*3px);padding:calc(var(--s)*2px)}
+.lart svg{display:block;width:100%;height:100%}
+.solo .lkind{font-size:.7em;margin-bottom:.6em}
+.solo .lt{font-size:1.4em;margin-bottom:.45em}
+.solo .ld{font-size:1.1em;line-height:1.4}
+.solo .lmore{font-size:.9em;margin-top:.8em}
+.solo .bars{float:none;width:100%;margin:.7em 0 0}
+#lHint{position:absolute;left:calc(var(--s)*8px);right:calc(var(--s)*8px);bottom:calc(var(--s)*4px);text-align:center;font-size:.78em;font-weight:700;color:#1b1b2a}
+/* dice game */
+#dice{position:absolute;inset:0;background:linear-gradient(#bfe0ff 0%,#e9f5ff 30%,#cde9a8 30%,#a8d47a 100%);color:var(--ink)}
+#dHead{position:absolute;left:calc(var(--s)*8px);top:calc(var(--s)*4px);right:calc(var(--s)*8px);height:calc(var(--s)*44px);display:flex;align-items:center;gap:calc(var(--s)*8px)}
+#dCv{height:calc(var(--s)*42px)}
+#dRow{position:absolute;left:calc(var(--s)*6px);right:calc(var(--s)*6px);top:calc(var(--s)*54px);bottom:calc(var(--s)*16px);display:flex;gap:calc(var(--s)*5px);align-items:stretch}
+.dopt{font:inherit;color:var(--ink);flex:0 0 26%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--s)*3px);
+  background:var(--paper);border:calc(var(--s)*1.2px) solid var(--ink);border-radius:calc(var(--s)*3px);cursor:pointer;transition:transform .15s,box-shadow .2s,opacity .2s}
+.dopt:hover{transform:translateY(-2px)}
+.dopt b{font-size:1em} .dopt span{font-size:.7em;opacity:.6}
+.dopt.actual{background:#fff3c4;border-color:#c58a00;box-shadow:0 0 0 calc(var(--s)*2px) #ffd54f,0 0 calc(var(--s)*12px) #ffd54f}
+.dopt.dim{opacity:.45}
+.die{width:calc(var(--s)*34px);height:calc(var(--s)*34px)}
+.d6{background:#fff;border:calc(var(--s)*1.2px) solid var(--ink);border-radius:calc(var(--s)*6px);display:grid;grid-template-columns:repeat(3,1fr);padding:calc(var(--s)*4px);gap:calc(var(--s)*2px)}
+.d6 i,.d6 s{display:block;border-radius:50%}
+.d6 i{background:var(--ink)}
+.d60{background:#5a2d82;color:#fff;display:grid;place-items:center;font-weight:800;font-size:1.3em;
+  clip-path:polygon(50% 0,79% 10%,98% 35%,98% 65%,79% 90%,50% 100%,21% 90%,2% 65%,2% 35%,21% 10%)}
+#dMid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:calc(var(--s)*4px) calc(var(--s)*6px)}
+.dsay{font-size:.85em}
+.dnum{font-size:3.2em;font-weight:800;color:#5a2d82;line-height:1.1}
+#dRes{font-size:.78em;line-height:1.35;min-height:5.5em;width:100%}
+#dRes .rh{font-weight:800;font-size:1.1em;margin-bottom:.2em}
+#dRes .ok{color:#2b8a3e} #dRes .no{color:#c0392b}
+.dbars{display:grid;gap:.2em;margin-top:.35em;text-align:left}
+.dbars .bar{grid-template-columns:5.5em 1fr 3em}
+#dHint{position:absolute;left:calc(var(--s)*8px);right:calc(var(--s)*8px);bottom:calc(var(--s)*4px);text-align:center;font-size:.78em;font-weight:700}
+.slidein{animation:slidein .5s ease-out}
+@keyframes slidein{from{transform:translateX(60%);opacity:0}}
+.pop{animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+/* screens */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#f3ecd2;
+  background:radial-gradient(ellipse at 50% 30%,#2b2f55,#0d0e1a 72%);padding:calc(var(--s)*12px)}
+.screen h1{font-size:2.5em;margin:0;letter-spacing:.06em;color:#ffd54f;text-shadow:0 3px 0 #b5521e,0 6px 0 #5a2410}
+.screen h2{font-size:1.5em;margin:0;color:#ffd54f}
+.screen .tag{margin:.6em 0 1.2em;opacity:.85;max-width:44em;line-height:1.5}
+.blink{animation:blink 1s steps(2) infinite;font-weight:800}
+@keyframes blink{50%{opacity:0}}
+.keys{margin-top:1.2em;font-size:.72em;opacity:.8;line-height:1.9}
+.keys b{display:inline-block;border:1px solid #f3ecd2;border-radius:4px;padding:0 .4em;margin:0 .15em}
+.cite{position:absolute;bottom:calc(var(--s)*5px);left:0;right:0;font-size:.6em;opacity:.55;padding:0 1em}
+.cite a{color:inherit}
+.sprites{display:flex;gap:calc(var(--s)*3px);margin:calc(var(--s)*4px) 0}
+.sprites canvas{width:calc(var(--s)*24px);height:calc(var(--s)*28.5px)}
+#codex{position:absolute;inset:calc(var(--s)*6px);padding:calc(var(--s)*6px) calc(var(--s)*8px);overflow:auto}
+#codex h2{margin:0 0 .2em;font-size:1.05em}
+#codex .hint{font-size:.7em;opacity:.7;margin-bottom:.6em}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--s)*4px)}
+.card{display:flex;gap:calc(var(--s)*4px);border:1px solid var(--rule);border-radius:calc(var(--s)*2px);padding:calc(var(--s)*3px);background:#fff;font-size:.7em;line-height:1.35}
+.card canvas{width:calc(var(--s)*20px);height:calc(var(--s)*24px);flex:none}
+.card.unk{opacity:.45}
+.rbtn{font:inherit;font-weight:700;font-size:1em;border:2px solid var(--ink);background:#fff;color:var(--ink);border-radius:4px;padding:0 .4em;cursor:pointer}
+.rbtn:hover{background:#efe3bd}
+#endSprites{gap:calc(var(--s)*1px)}
+#endSprites .who{margin:0;display:flex;flex-direction:column;align-items:center;width:calc(var(--s)*23px)}
+#endSprites .who canvas{width:calc(var(--s)*20px);height:calc(var(--s)*23.75px)}
+#endSprites figcaption{font-size:.5em;font-weight:700;white-space:nowrap;margin-bottom:.7em;color:#ffd54f}
+.qr{position:absolute;right:calc(var(--s)*8px);bottom:calc(var(--s)*14px);display:flex;flex-direction:column;align-items:center;gap:calc(var(--s)*1.5px);color:#f3ecd2;text-decoration:none}
+.qr svg{width:calc(var(--s)*30px);height:calc(var(--s)*30px);display:block;border-radius:calc(var(--s)*1.5px)}
+.qr span{font-size:.5em;font-weight:700;opacity:.85}
+#end .rbtn{font-size:.9em;margin-top:1em;padding:.2em .8em}
+#popper h2{margin-bottom:calc(var(--s)*5px)}
+#popper .tk{display:flex;align-items:center;gap:calc(var(--s)*6px);width:100%;max-width:calc(var(--s)*240px);margin-bottom:calc(var(--s)*5px);text-align:left}
+#popper .tk canvas{width:calc(var(--s)*26px);height:calc(var(--s)*31px);flex:none}
+#popper .tkBody{flex:1;padding:calc(var(--s)*4px) calc(var(--s)*8px)}
+#popper .tkT{font-weight:800;font-size:1.05em;color:#5a2d82;margin-bottom:.2em}
+#popper .tkQ{font-style:italic;font-size:.88em;line-height:1.4}
+#popper .tkA{font-size:.7em;opacity:.7;margin-top:.3em}
+#popper .tkViz{display:block;width:100%;margin:.7em 0 .3em}
+#popper .tkX{font-size:.85em;line-height:1.4}
+#popper1 .tkQ{font-size:1.05em;line-height:1.5}
+#popper1 .tkA{font-size:.8em;margin-top:.6em}
+#popper .tk{max-width:calc(var(--s)*256px)}
+#popper .tk canvas{width:calc(var(--s)*36px);height:calc(var(--s)*43px)}
+/* audience poll (phones answer via vote.html) */
+#poll{position:absolute;inset:0;background:linear-gradient(#bfe0ff 0%,#e9f5ff 30%,#cde9a8 30%,#a8d47a 100%);color:var(--ink);cursor:pointer}
+#pollHead{position:absolute;left:calc(var(--s)*8px);top:calc(var(--s)*4px);right:calc(var(--s)*8px);height:calc(var(--s)*44px);display:flex;align-items:center;gap:calc(var(--s)*8px)}
+#pollCv{height:calc(var(--s)*42px);flex:none}
+#pollBody{position:absolute;left:calc(var(--s)*6px);right:calc(var(--s)*6px);top:calc(var(--s)*52px);bottom:calc(var(--s)*16px);display:flex;gap:calc(var(--s)*5px)}
+#pollMain{flex:1;min-width:0;padding:calc(var(--s)*6px) calc(var(--s)*8px);display:flex;flex-direction:column;justify-content:center;gap:calc(var(--s)*4px)}
+.pq{font-weight:800;font-size:1.25em;line-height:1.3}
+#pollOpts{display:grid;gap:calc(var(--s)*2.5px)}
+.popt{position:relative;display:grid;grid-template-columns:1.8em 1fr 2.6em;align-items:center;gap:.5em;padding:.35em .5em;border:calc(var(--s)*1px) solid var(--ink);border-radius:calc(var(--s)*2px);background:#fff;overflow:hidden;font-size:.95em;line-height:1.25}
+.popt>*{position:relative}
+.popt .pl{display:grid;place-items:center;width:1.6em;height:1.6em;border-radius:50%;background:#5a2d82;color:#fff;font-weight:800;font-size:.85em}
+.popt .pf{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(90,45,130,.18);transition:width .8s cubic-bezier(.2,1,.3,1)}
+.popt .pn{text-align:right;font-weight:800;opacity:0;transition:opacity .4s}
+#poll.reveal .popt .pn{opacity:1}
+#poll.reveal .popt.ok{border-color:#2b8a3e;box-shadow:0 0 0 calc(var(--s)*1.5px) #8fd19e}
+#poll.reveal .popt.ok .pf{background:rgba(56,178,74,.3)}
+#poll.reveal .popt.ok .pl{background:#2b8a3e}
+#poll.reveal.graded .popt:not(.ok){opacity:.6}
+#pollSide{flex:0 0 32%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--s)*2.5px);padding:calc(var(--s)*5px);text-align:center}
+#pollQr{width:calc(var(--s)*68px);height:calc(var(--s)*68px);background:#fff;padding:calc(var(--s)*3px);border-radius:calc(var(--s)*2px)}
+#pollQr img,#pollQr canvas{width:100%!important;height:100%!important}
+.pscan{font-weight:800;font-size:.85em}
+.purl{font-size:.55em;opacity:.65;word-break:break-all}
+.pcount{font-size:1.9em;font-weight:800;color:#5a2d82;line-height:1}
+.pcount small{display:block;font-size:.4em;color:var(--ink);opacity:.7;letter-spacing:.05em}
+.poff{font-size:.8em;line-height:1.4;opacity:.8}
+.plive{font-size:.6em;font-weight:700;opacity:.7}
+.plive.ok{color:#2b8a3e;opacity:1} .plive.bad{color:#c0392b;opacity:1}
+#pollHint{position:absolute;left:calc(var(--s)*8px);right:calc(var(--s)*8px);bottom:calc(var(--s)*4px);text-align:center;font-size:.78em;font-weight:700}
+.card b{display:block}
+.card i{opacity:.65;font-style:normal;font-size:.92em}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="world"></canvas>
+  <div id="banner" class="panel"></div>
+  <div id="hud" class="panel hidden"></div>
+  <div id="dialog" class="panel hidden"><div id="dName"></div><div id="dText"></div><div class="more" id="dMore">▼</div></div>
+
+  <div id="lesson" class="hidden">
+    <div id="lHead"><canvas id="lCv" width="16" height="19"></canvas>
+      <div class="lname panel"><div class="nm" id="lName"></div><div class="sub" id="lSub"></div><div class="dots" id="lDots"></div></div></div>
+    <div id="lCards"></div>
+    <div id="lHint"></div>
+  </div>
+
+  <div id="dice" class="hidden">
+    <div id="dHead"><canvas id="dCv" width="16" height="19"></canvas>
+      <div class="lname panel"><div class="nm">Bayes’ dice game</div><div class="sub" id="dSub"></div></div></div>
+    <div id="dRow">
+      <button class="dopt" id="dOpt6"><div class="die d6"><i></i><s></s><i></i><s></s><i></i><s></s><i></i><s></s><i></i></div><b>6-sided</b><span>press 1</span></button>
+      <div id="dMid" class="panel"><div class="dsay" id="dSay"></div><div class="dnum" id="dNum">?</div><div id="dRes"></div></div>
+      <button class="dopt" id="dOpt60"><div class="die d60">60</div><b>60-sided</b><span>press 2</span></button>
+    </div>
+    <div id="dHint"></div>
+  </div>
+
+  <div id="poll" class="hidden">
+    <div id="pollHead"><canvas id="pollCv" width="16" height="19"></canvas>
+      <div class="lname panel"><div class="nm" id="pollName"></div><div class="sub">❓ Quick question before we start</div></div></div>
+    <div id="pollBody">
+      <div id="pollMain" class="panel"><div class="pq" id="pollQ"></div><div id="pollOpts"></div></div>
+      <div id="pollSide" class="panel"></div>
+    </div>
+    <div id="pollHint"></div>
+  </div>
+
+  <div id="codex" class="panel hidden"></div>
+
+  <div id="title" class="screen">
+    <h1>OCCAM’S QUEST</h1>
+    <div class="tag">A 15-minute journey through the history of simplicity.<br>Walk up to each scientist and reveal the things to remember.</div>
+    <div class="sprites" id="titleSprites"></div>
+    <div class="blink" id="titlePrompt">PRESS ENTER</div>
+    <div class="keys"><b>←↑↓→</b>/<b>WASD</b> walk &nbsp; <b>Space</b>/<b>Enter</b> talk &nbsp; <b>C</b> codex &nbsp; <b>I</b> more detail &nbsp; <b>1</b>–<b>7</b> jump to a stop &nbsp; <b>R</b> restart &nbsp; <b>M</b> music on/off</div>
+    <div class="cite">Based on J. McFadden (2021), <a href="https://johnjoemcfadden.co.uk/books/life-is-simple-how-occams-razor-set-science-free-and-unlocked-the-universe/" target="_blank" rel="noopener"><i>Life Is Simple: How Occam’s Razor Set Science Free and Unlocked the Universe</i></a>.</div>
+  </div>
+
+  <div id="popper" class="screen hidden">
+    <h2>TAKE-HOME MESSAGE</h2>
+    <div class="tk" id="popper1"><canvas id="pCv" width="16" height="19"></canvas>
+      <div class="tkBody panel"><div class="tkT">Simple theories tell us more</div>
+        <div class="tkQ">“Simple statements, if knowledge is our object, are to be prized more highly than less simple ones because they tell us more; because their empirical content is greater; and because they are better testable.”</div>
+        <div class="tkA">— Karl Popper, <i>The Logic of Scientific Discovery</i></div></div></div>
+    <div class="blink">PRESS ENTER</div>
+  </div>
+
+  <div id="end" class="screen hidden">
+    <h2>THE RAZOR IS SHARP</h2>
+    <div class="tag" id="endText"></div>
+    <div class="sprites" id="endSprites"></div>
+    <div class="blink">PRESS ENTER TO KEEP EXPLORING</div>
+    <button class="rbtn" id="endRestart">↺ Restart (R)</button>
+    <div class="cite">Based on J. McFadden (2021), <a href="https://johnjoemcfadden.co.uk/books/life-is-simple-how-occams-razor-set-science-free-and-unlocked-the-universe/" target="_blank" rel="noopener"><i>Life Is Simple: How Occam’s Razor Set Science Free and Unlocked the Universe</i></a>.</div>
+    <a class="qr" href="https://johnjoemcfadden.co.uk/books/life-is-simple-how-occams-razor-set-science-free-and-unlocked-the-universe/" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 49 49" shape-rendering="crispEdges" aria-label="QR code linking to the book"><path fill="#fff" d="M0 0h49v49h-49z"/><path class="qrline" stroke="#1b1b2a" d="M2 2.5h7m3 0h1m2 0h3m3 0h1m2 0h1m2 0h1m1 0h7m2 0h1m1 0h7m-45 1h1m5 0h1m2 0h1m1 0h1m2 0h1m1 0h4m3 0h4m4 0h2m2 0h1m2 0h1m5 0h1m-45 1h1m1 0h3m1 0h1m1 0h2m4 0h1m2 0h2m8 0h2m1 0h1m1 0h2m1 0h1m2 0h1m1 0h3m1 0h1m-45 1h1m1 0h3m1 0h1m1 0h3m1 0h1m3 0h3m1 0h4m3 0h1m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1m1 0h3m1 0h1m-45 1h1m1 0h3m1 0h1m1 0h1m1 0h4m1 0h2m2 0h6m4 0h2m1 0h1m1 0h3m1 0h1m1 0h3m1 0h1m-45 1h1m5 0h1m1 0h1m1 0h1m1 0h1m1 0h1m2 0h1m2 0h1m3 0h1m6 0h1m1 0h1m4 0h1m5 0h1m-45 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-37 1h1m1 0h2m2 0h2m3 0h2m3 0h2m1 0h4m1 0h5m-37 1h1m1 0h5m2 0h2m1 0h3m1 0h2m2 0h5m4 0h3m1 0h3m2 0h5m-43 1h1m1 0h1m1 0h1m6 0h2m1 0h2m2 0h2m1 0h1m1 0h3m3 0h3m3 0h2m3 0h2m1 0h2m-45 1h1m3 0h1m1 0h3m1 0h2m1 0h1m1 0h2m2 0h1m4 0h1m1 0h2m4 0h8m1 0h1m1 0h1m-44 1h1m1 0h2m4 0h1m1 0h3m1 0h2m1 0h1m5 0h5m1 0h4m2 0h8m-42 1h2m3 0h1m3 0h2m1 0h3m2 0h2m1 0h2m1 0h2m1 0h1m1 0h3m5 0h3m4 0h1m-45 1h4m3 0h5m10 0h1m2 0h1m2 0h4m1 0h1m1 0h3m1 0h1m2 0h1m1 0h1m-45 1h1m1 0h3m1 0h1m2 0h3m1 0h1m1 0h3m1 0h6m1 0h1m1 0h2m1 0h4m3 0h1m4 0h1m-44 1h5m2 0h1m2 0h3m2 0h5m2 0h3m2 0h4m1 0h1m2 0h2m3 0h5m-45 1h2m1 0h1m1 0h3m2 0h2m1 0h3m1 0h3m1 0h1m1 0h1m2 0h1m2 0h3m1 0h1m4 0h1m4 0h2m-42 1h1m3 0h3m2 0h1m2 0h3m1 0h3m3 0h1m3 0h2m1 0h2m1 0h2m3 0h1m1 0h3m-44 1h1m4 0h2m4 0h2m3 0h1m2 0h1m1 0h1m1 0h1m1 0h1m1 0h1m3 0h4m2 0h1m1 0h2m1 0h1m-44 1h1m3 0h1m2 0h1m1 0h5m1 0h1m3 0h1m3 0h1m1 0h4m2 0h2m1 0h2m1 0h7m-43 1h1m1 0h7m1 0h2m2 0h10m1 0h1m2 0h3m4 0h5m2 0h2m-45 1h5m3 0h1m2 0h1m7 0h2m3 0h4m1 0h3m3 0h2m3 0h3m1 0h1m-44 1h2m1 0h1m1 0h1m1 0h3m1 0h1m2 0h2m1 0h1m1 0h1m1 0h1m1 0h1m3 0h1m3 0h1m1 0h3m1 0h1m1 0h1m1 0h2m-40 1h1m3 0h1m2 0h2m1 0h1m2 0h2m1 0h1m3 0h2m1 0h3m2 0h1m1 0h1m1 0h1m3 0h3m1 0h1m-45 1h1m2 0h8m1 0h1m2 0h1m2 0h7m6 0h1m2 0h1m1 0h6m-42 1h3m6 0h1m7 0h9m1 0h6m3 0h2m1 0h1m1 0h1m2 0h1m-45 1h2m4 0h1m5 0h5m5 0h1m3 0h1m6 0h5m2 0h2m1 0h1m-44 1h1m2 0h2m9 0h1m1 0h1m2 0h2m1 0h1m1 0h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h3m1 0h4m-42 1h1m2 0h1m1 0h1m5 0h3m2 0h1m7 0h1m10 0h1m1 0h1m2 0h2m-44 1h4m2 0h1m2 0h1m1 0h3m1 0h2m2 0h4m1 0h1m3 0h4m2 0h2m1 0h1m3 0h1m1 0h1m-45 1h2m2 0h4m1 0h1m1 0h2m4 0h3m2 0h1m1 0h1m1 0h1m2 0h1m3 0h2m1 0h1m2 0h1m1 0h3m-41 1h1m4 0h4m7 0h5m1 0h1m1 0h3m2 0h1m1 0h2m2 0h2m1 0h2m-41 1h6m1 0h1m8 0h2m5 0h1m1 0h1m1 0h3m5 0h5m1 0h2m-44 1h1m2 0h1m2 0h3m3 0h1m3 0h3m1 0h3m1 0h1m3 0h2m1 0h1m3 0h1m7 0h1m-41 1h1m1 0h2m1 0h1m3 0h1m1 0h3m3 0h1m4 0h1m4 0h2m1 0h4m3 0h1m-41 1h4m2 0h2m1 0h4m1 0h1m4 0h1m3 0h1m2 0h3m2 0h1m2 0h2m1 0h1m2 0h4m-45 1h1m2 0h2m1 0h1m2 0h5m6 0h6m3 0h3m4 0h5m-33 1h2m2 0h4m1 0h2m1 0h1m3 0h1m2 0h1m1 0h2m1 0h1m2 0h2m3 0h3m1 0h1m-45 1h7m3 0h3m1 0h1m1 0h5m1 0h1m1 0h2m1 0h1m1 0h1m1 0h6m1 0h1m1 0h1m1 0h2m-44 1h1m5 0h1m1 0h2m3 0h3m2 0h3m3 0h2m1 0h2m1 0h1m1 0h5m3 0h5m-45 1h1m1 0h3m1 0h1m1 0h1m2 0h1m3 0h2m1 0h1m1 0h6m3 0h1m1 0h1m1 0h1m1 0h7m1 0h2m-45 1h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h8m1 0h3m2 0h5m4 0h4m3 0h1m-45 1h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h2m3 0h1m4 0h2m1 0h2m5 0h5m3 0h1m1 0h1m-44 1h1m5 0h1m2 0h2m2 0h3m1 0h2m1 0h1m1 0h2m1 0h4m1 0h5m1 0h2m1 0h4m-43 1h7m1 0h1m2 0h2m1 0h2m1 0h1m4 0h5m2 0h1m1 0h1m3 0h7m1 0h1"/></svg><span>Scan for the book</span></a>
+  </div>
+</div></div>
+
+<!-- live audience questions: Cloudflare Worker (see worker/) + QR codes -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="live-config.js"></script>
+<script>
+(()=>{
+'use strict';
+const T=16, VW=17, VH=13, MW=32, MH=40;
+const $=id=>document.getElementById(id);
+const cv=$('world'); cv.width=VW*T; cv.height=VH*T;
+const ctx=cv.getContext('2d'); ctx.imageSmoothingEnabled=false;
+
+function fit(){
+  const s=Math.max(1.4,Math.min(innerWidth/282,innerHeight/218));
+  document.documentElement.style.setProperty('--s',s.toFixed(3));
+  document.documentElement.style.setProperty('--fs',Math.max(13,Math.min(28,s*5.6)).toFixed(1)+'px');
+}
+addEventListener('resize',fit); fit();
+
+/* ---------------- sound ---------------- */
+let AC=null, muted=false;
+function initAudio(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended') AC.resume(); }
+
+/* background music: a slow, soft lo-fi loop (warm pads, gentle arpeggio, light beat), synthesized live */
+const PROG=[[62,66,69,73],[59,62,66,69],[55,59,62,66],[57,61,64,67]];   // Dmaj7 · Bm7 · Gmaj7 · A7
+const BASS=[38,35,31,33];
+const ARP=[0,2,1,3,2,1,null,2];                                            // chord-tone order per 8th note
+const MEL={4:[[0,81,6],[8,78,8]],5:[[0,78,4],[4,76,4],[8,74,8]],6:[[0,79,6],[8,78,8]],7:[[0,76,12]]}; // bar:[[16th,note,len]]
+const STEP=60/76/4, LOOP=8*16;
+let musicTimer=null, musicNext=0, musicStep=0, musicGain=null, musicPaused=false, noiseBuf=null;
+function mNote(m,t,d,wave,vol,att=.01){
+  const o=AC.createOscillator(), g=AC.createGain();
+  o.type=wave; o.frequency.value=440*Math.pow(2,(m-69)/12);
+  g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(vol,t+att);
+  g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g); g.connect(musicGain); o.start(t); o.stop(t+d+.05);
+}
+function drum(t,kind){
+  if(kind==='kick'){
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.frequency.setValueAtTime(110,t); o.frequency.exponentialRampToValueAtTime(40,t+.15);
+    g.gain.setValueAtTime(.07,t); g.gain.exponentialRampToValueAtTime(.0001,t+.2);
+    o.connect(g); g.connect(musicGain); o.start(t); o.stop(t+.22); return;
+  }
+  const s=AC.createBufferSource(), f=AC.createBiquadFilter(), g=AC.createGain();
+  s.buffer=noiseBuf; f.type='bandpass'; f.frequency.value=kind==='snare'?2200:7000;
+  const v=kind==='snare'?.025:.008, d=kind==='snare'?.18:.05;
+  g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  s.connect(f); f.connect(g); g.connect(musicGain); s.start(t); s.stop(t+d+.02);
+}
+function scheduleMusic(){
+  if(musicPaused) return;
+  while(musicNext<AC.currentTime+.3){
+    if(!muted){
+      const i=musicStep, bar=Math.floor(i/16), s=i%16, t=musicNext, ch=PROG[bar%4], BAR=16*STEP;
+      if(s===0){ ch.forEach(n=>mNote(n,t,BAR*1.05,'sine',.018,.6)); mNote(BASS[bar%4],t,BAR*.9,'sine',.09,.05); }
+      if(s===8) mNote(BASS[bar%4]+(bar%2?7:12),t,BAR*.4,'sine',.06,.05);
+      if(s%2===0){ const k=ARP[s/2]; if(k!==null) mNote(ch[k]+12,t,STEP*3,'triangle',.022,.02); }
+      for(const [st,n,l] of (MEL[bar]||[])) if(st===s) mNote(n,t,l*STEP,'triangle',.03,.08);
+      if(s===0||s===10) drum(t,'kick');
+      if(s===8) drum(t,'snare');
+      if(s%4===2) drum(t,'hat');
+    }
+    musicNext+=STEP; musicStep=(musicStep+1)%LOOP;
+  }
+}
+function startMusic(){
+  if(!AC||musicTimer) return;
+  noiseBuf=AC.createBuffer(1,AC.sampleRate*.2,AC.sampleRate);
+  const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const warm=AC.createBiquadFilter(); warm.type='lowpass'; warm.frequency.value=1600; warm.connect(AC.destination);
+  musicGain=AC.createGain(); musicGain.gain.value=.8; musicGain.connect(warm);
+  musicNext=AC.currentTime+.15; musicTimer=setInterval(scheduleMusic,60);
+}
+function pauseMusic(){
+  if(!musicGain||musicPaused) return;
+  musicPaused=true; musicGain.gain.setTargetAtTime(0,AC.currentTime,.12);
+}
+function resumeMusic(){
+  if(!musicGain||!musicPaused) return;
+  musicPaused=false; musicStep=0; musicNext=AC.currentTime+.3;
+  musicGain.gain.cancelScheduledValues(AC.currentTime); musicGain.gain.setValueAtTime(.8,AC.currentTime+.25);
+}
+function tone(f,d=.06,type='square',vol=.04,when=0){
+  if(!AC||muted) return;
+  const o=AC.createOscillator(), g=AC.createGain(), t0=AC.currentTime+when;
+  o.type=type; o.frequency.value=f; o.connect(g); g.connect(AC.destination);
+  g.gain.setValueAtTime(vol,t0); g.gain.exponentialRampToValueAtTime(.0001,t0+d);
+  o.start(t0); o.stop(t0+d+.02);
+}
+const sfx={
+  blip:()=>tone(880,.025,'square',.012),
+  good:()=>[660,880,1320].forEach((f,i)=>tone(f,.09,'square',.04,i*.07)),
+  bad:()=>{tone(160,.25,'sawtooth',.05);tone(110,.3,'sawtooth',.04,.08);},
+  win:()=>[523,659,784,1047,784,1047].forEach((f,i)=>tone(f,.14,'triangle',.06,i*.11)),
+  encounter:()=>{ // short "a wild scientist appears!" fanfare
+    [440,554,659,880,659,880,1109,1319].forEach((f,i)=>tone(f,.07,'square',.035,i*.055));
+    [[659,.5],[831,.5],[988,.5]].forEach(([f])=>tone(f,.55,'square',.03,.5));
+    tone(330,.6,'triangle',.08,.5);
+  },
+  item:()=>[784,988,1175,1568].forEach((f,i)=>tone(f,.12,'triangle',.06,i*.09)),
+  bump:()=>tone(90,.05,'square',.03),
+};
+
+/* ---------------- sprites ---------------- */
+function shade(h,a){const n=parseInt(h.slice(1),16);const f=v=>Math.max(0,Math.min(255,Math.round(a<0?v*(1+a):v+(255-v)*a)));
+  return '#'+((1<<24)|(f(n>>16)<<16)|(f(n>>8&255)<<8)|f(n&255)).toString(16).slice(1);}
+
+const LOOKS={
+  player:{skin:'#f1c27d',hair:'#3b2a1a',robe:'#2f6fd6',legs:'#24324a',hat:'cap',hc:'#d63a2f'},
+  occam:{skin:'#e9b98c',hair:'#6b4a2b',robe:'#7a5a3a',legs:'#4a3624',hat:'cowl',trim:'#d9c8a0'},
+  villager:{skin:'#f1c27d',hair:'#a0522d',robe:'#6f8f3f',legs:'#3b2f1f'},
+  astronomer:{skin:'#e0ac69',hair:'#888888',robe:'#4b3b6b',legs:'#222222',hat:'wizard',hc:'#2d2a6b',beard:'#cccccc'},
+  buridan:{skin:'#e9b98c',hair:'#2b2b2b',robe:'#3b4a8a',legs:'#222222',hat:'beret',hc:'#2a2a5a'},
+  ptolemy:{skin:'#c68642',hair:'#eeeeee',robe:'#f2efe6',legs:'#c9b58a',hat:'laurel',beard:'#eeeeee',trim:'#7b4fb0'},
+  copernicus:{skin:'#f1c27d',hair:'#3b2a1a',robe:'#8b1e2b',legs:'#222222',hat:'beret',hc:'#1d1d1d'},
+  tycho:{skin:'#f1c27d',hair:'#c9853b',robe:'#2e4a2e',legs:'#222222',beard:'#c9853b',nose:'#e5c07b'},
+  kepler:{skin:'#f1c27d',hair:'#2b1d14',robe:'#1d1d1d',legs:'#111111',beard:'#2b1d14',trim:'#ffffff'},
+  galileo:{skin:'#e9b98c',hair:'#b0b0b0',robe:'#3a2a1a',legs:'#222222',beard:'#b0b0b0'},
+  simplicio:{skin:'#f1c27d',hair:'#555555',robe:'#8a7a5a',legs:'#333333',hat:'beret',hc:'#5a3a1a'},
+  descartes:{skin:'#f1c27d',hair:'#1d1d1d',robe:'#1d1d1d',legs:'#111111',hat:'wig',trim:'#ffffff',mustache:'#1d1d1d'},
+  boyle:{skin:'#f1c27d',hair:'#d8cfb8',robe:'#4a3a6a',legs:'#222222',hat:'wig'},
+  stahl:{skin:'#e9b98c',hair:'#7a7a7a',robe:'#a33b20',legs:'#222222',hat:'wig',trim:'#f0a030'},
+  newton:{skin:'#f1c27d',hair:'#c0c0c0',robe:'#5a1e1e',legs:'#222222',hat:'wig',trim:'#ffffff'},
+  wallace:{skin:'#f1c27d',hair:'#5a4030',robe:'#5a4a2a',legs:'#333333',beard:'#5a4030',hat:'tophat',hc:'#2a2a2a'},
+  darwin:{skin:'#f1c27d',hair:'#e8e8e8',robe:'#2f2f3a',legs:'#222222',beard:'#e8e8e8',trim:'#d9d0b8'},
+  einstein:{skin:'#f1c27d',hair:'#f5f5f5',robe:'#7a6a5a',legs:'#333333',hat:'wild',mustache:'#dddddd'},
+  bayes:{skin:'#f1c27d',hair:'#d8d8d8',robe:'#1d1d1d',legs:'#111111',hat:'wig',trim:'#ffffff'},
+  popper:{skin:'#f1c27d',hair:'#9a9a9a',robe:'#3a3a4a',legs:'#222222',glasses:true},
+  jeffreys:{skin:'#f1c27d',hair:'#6a6a6a',robe:'#2a3a5a',legs:'#222222',glasses:true,trim:'#c9a227'},
+  kuhn:{skin:'#f1c27d',hair:'#3a3a3a',robe:'#5a6a7a',legs:'#222222',glasses:true},
+  feyerabend:{skin:'#f1c27d',hair:'#6b4a2b',robe:'#c2571a',legs:'#333333',trim:'#f4d03f'},
+  gross:{skin:'#f1c27d',hair:'#3b2a1a',robe:'#f4f4f4',legs:'#333333',glasses:true,trim:'#2fa36b'},
+  peacock:{special:'peacock'},
+};
+
+function drawPerson(c,ox,oy,L,dir,frame){
+  const p=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(ox+x,oy+y,w,h);};
+  const H=L.hair, E='#1b1b2a';
+  p(3,14,10,2,'rgba(0,0,0,.22)');
+  p(5,12,2,frame===1?2:3,L.legs); p(9,12,2,frame===2?2:3,L.legs);
+  p(4,7,8,6,L.robe);
+  if(dir==='left'||dir==='right'){ p(7,8,2,4,shade(L.robe,-.25)); p(7,12,2,1,L.skin); }
+  else { p(3,8,1,4,L.robe); p(12,8,1,4,L.robe); p(3,12,1,1,L.skin); p(12,12,1,1,L.skin); }
+  if(L.trim&&dir!=='up') p(7,7,2,5,L.trim);
+  p(5,2,6,5,L.skin);
+  if(dir==='up') p(5,2,6,5,H);
+  else{ p(5,2,6,1,H); if(dir==='down'){p(5,3,1,2,H);p(10,3,1,2,H);} if(dir==='left')p(9,3,2,3,H); if(dir==='right')p(5,3,2,3,H); }
+  if(dir==='down'){p(6,4,1,1,E);p(9,4,1,1,E);}
+  if(dir==='left')p(6,4,1,1,E);
+  if(dir==='right')p(9,4,1,1,E);
+  if(L.glasses&&dir!=='up'){
+    if(dir==='down'){p(5,4,6,1,'#2a2a2a');p(6,4,1,1,'#9fd3ff');p(9,4,1,1,'#9fd3ff');}
+    else{const gx=dir==='left'?5:8;p(gx,4,3,1,'#2a2a2a');p(gx+1,4,1,1,'#9fd3ff');}
+  }
+  if(L.nose&&dir!=='up') p(dir==='left'?5:dir==='right'?10:7,5,dir==='down'?2:1,1,L.nose);
+  if(L.beard&&dir!=='up'){ if(dir==='down'){p(5,5,6,2,L.beard);p(6,7,4,1,L.beard);} else p(dir==='left'?5:7,5,4,2,L.beard); }
+  if(L.mustache&&dir==='down') p(6,5,4,1,L.mustache);
+  const hc=L.hc;
+  switch(L.hat){
+    case 'cap': p(5,0,6,2,hc); p(7,0,2,1,'#ffffff');
+      if(dir==='down')p(4,2,8,1,hc); else if(dir==='left')p(3,2,4,1,hc); else if(dir==='right')p(9,2,4,1,hc); else p(5,2,6,1,hc); break;
+    case 'cowl': if(dir==='up'){p(4,1,8,7,L.robe);} else {p(4,1,8,2,L.robe);p(4,3,1,4,L.robe);p(11,3,1,4,L.robe);p(5,1,6,1,shade(L.robe,-.2));} break;
+    case 'beret': p(4,1,8,2,hc); p(10,0,2,1,hc); break;
+    case 'wizard': p(7,-3,2,1,hc);p(6,-2,4,1,hc);p(5,-1,6,1,hc);p(4,0,8,2,hc);p(7,-1,1,1,'#ffd54f'); break;
+    case 'laurel': p(4,2,1,2,'#7cb342');p(5,1,6,1,'#7cb342');p(11,2,1,2,'#7cb342');p(6,1,1,1,'#9ccc65');p(9,1,1,1,'#9ccc65'); break;
+    case 'wig': if(dir==='up'){p(4,1,8,8,H);} else {p(4,1,8,2,H);p(3,2,2,7,H);p(11,2,2,7,H);} break;
+    case 'tophat': p(5,-3,6,4,hc);p(4,1,8,1,hc);p(5,0,6,1,'#8b1e2b'); break;
+    case 'wild': p(4,1,8,2,H);p(3,2,2,4,H);p(11,2,2,4,H);p(3,0,1,1,H);p(6,0,1,1,H);p(9,0,1,1,H);p(12,0,1,1,H); break;
+  }
+}
+function drawPeacock(c,ox,oy){
+  const p=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(ox+x,oy+y,w,h);};
+  p(3,14,10,2,'rgba(0,0,0,.22)');
+  for(let a=0;a<9;a++){
+    const ang=Math.PI*(1.06+a*0.11);
+    for(let t=2;t<=7;t++) p(Math.round(8+Math.cos(ang)*t),Math.round(10+Math.sin(ang)*t),1,1,a%2?'#2fbf71':'#1b8a5a');
+    const ex=Math.round(8+Math.cos(ang)*7), ey=Math.round(10+Math.sin(ang)*7);
+    p(ex-1,ey-1,2,2,'#f4c430'); p(ex,ey,1,1,'#1e3fa8');
+  }
+  p(7,7,3,6,'#1e5fbf'); p(7,4,2,3,'#1e5fbf'); p(7,2,1,2,'#2fbf71'); p(9,2,1,1,'#2fbf71');
+  p(6,5,1,1,'#f4c430'); p(8,5,1,1,'#ffffff'); p(7,13,1,2,'#c9a227'); p(9,13,1,2,'#c9a227');
+}
+function drawSprite(c,x,y,L,dir,frame){ if(L.special==='peacock') drawPeacock(c,x,y); else drawPerson(c,x,y,L,dir,frame); }
+function spriteCanvas(look,dir){ const k=document.createElement('canvas'); k.width=16;k.height=19; const c=k.getContext('2d'); drawSprite(c,0,3,look,dir||'down',0); return k; }
+function paintCanvas(k,look,dir){ const c=k.getContext('2d'); c.clearRect(0,0,k.width,k.height); drawSprite(c,0,3,look,dir,0); }
+
+/* ---------------- map ---------------- */
+const map=[]; for(let y=0;y<MH;y++) map.push(Array(MW).fill('#'));
+const rect=(x,y,w,h,c)=>{for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)if(j>=0&&j<MH&&i>=0&&i<MW)map[j][i]=c;};
+const set=(x,y,c)=>{map[y][x]=c;};
+const house=(x,y,w)=>{rect(x,y,w,2,'R');rect(x,y+2,w,1,'W');set(x+1,y+2,'D');};
+const dots=(list,c)=>list.forEach(([x,y])=>set(x,y,c));
+
+rect(2,2,28,8,'.'); rect(2,14,28,8,'.'); rect(2,26,28,6,'.');
+// Medieval village & the old tower
+house(3,2,4); house(8,2,3); house(13,2,5); rect(21,2,3,3,'T');
+rect(18,8,2,2,'#'); rect(9,8,4,2,',');
+dots([[3,8],[4,9],[15,8],[16,9]],'f');
+// Scientific Revolution
+house(5,14,4); house(10,14,3); house(15,14,3); rect(22,14,2,2,'#'); rect(18,20,4,2,'~');
+dots([[10,20],[11,21],[24,20],[25,21]],'f');
+// 1800s
+rect(14,26,2,2,'#'); rect(8,30,5,2,',');
+dots([[20,27],[21,26]],'f');
+// roads
+rect(3,6,26,2,'='); rect(27,6,2,12,'='); rect(3,17,26,2,'='); rect(3,18,2,11,'='); rect(3,28,20,2,'=');
+// Einstein's study
+rect(23,26,1,6,'#'); rect(24,26,6,6,'H'); rect(24,29,6,1,'C');
+dots([[24,26],[29,26],[24,31],[29,31]],'P');
+// Bayes' corner
+rect(16,34,14,4,'.'); rect(27,33,1,1,'='); rect(19,34,9,2,'=');
+dots([[17,36],[19,37],[28,36],[29,37]],'f');
+
+const SIGNS={
+  '6,8':`OCKHAM, England — home of William of Occam.`,
+  '20,5':`PTOLEMY’S OLD TOWER — “circles on circles on circles…”`,
+  '26,9':`SOUTH: the Scientific Revolution.`,
+  '26,19':`THE SCIENTIFIC REVOLUTION · 1600s`,
+  '6,20':`SOUTH: the 1800s. Only Newton’s seal opens this door.`,
+  '6,30':`THE 1800s · the age of evolution`,
+  '22,27':`EINSTEIN’S STUDY — 1900s.`,
+  '25,36':`BAYES’ CORNER — the maths of simplicity.`,
+};
+for(const k in SIGNS){const [x,y]=k.split(',').map(Number);set(x,y,'S');}
+
+const flags={};
+const GATES={};
+const gate=(x,y,style,open,msg)=>{set(x,y,'G');GATES[x+','+y]={style,open,msg};};
+const g1msg=`A wall of spinning circles blocks the road. Visit Copernicus & Kepler to clear it.`;
+gate(27,11,'epicycle',()=>flags.cosmos,g1msg); gate(28,11,'epicycle',()=>flags.cosmos,g1msg);
+const g2msg=`A door sealed with the word “PRINCIPIA”. Isaac Newton has the key.`;
+gate(3,23,'door',()=>flags.newton,g2msg); gate(4,23,'door',()=>flags.newton,g2msg);
+gate(23,29,'light',()=>flags.evolution,`A golden light blocks the way. Talk to Darwin & Wallace first.`);
+gate(27,32,'light',()=>flags.einstein,`A golden light blocks the way. Talk to Einstein first.`);
+
+const SOLID=new Set(['#','~','R','W','D','T','P','S']);
+function tileSolid(x,y){
+  if(x<0||y<0||x>=MW||y>=MH) return true;
+  const c=map[y][x];
+  if(c==='G') return !GATES[x+','+y].open();
+  return SOLID.has(c);
+}
+
+/* ---------------- tiles ---------------- */
+function hash(x,y){let h=(x*374761393+y*668265263)|0;h=Math.imul(h^(h>>>13),1274126177);return (h^(h>>>16))>>>0;}
+function drawTile(ch,x,y,sx,sy,t){
+  const p=(px,py,w,h,col)=>{ctx.fillStyle=col;ctx.fillRect(sx+px,sy+py,w,h);};
+  const h=hash(x,y);
+  const grass=()=>{p(0,0,16,16,'#7ccc5a');for(let i=0;i<3;i++){const v=(h>>>(i*8))&255;p(v%15,(v>>4)%14,1,2,'#64b447');}};
+  const path=()=>{p(0,0,16,16,'#e2c58a');for(let i=0;i<3;i++){const v=(h>>>(i*8))&255;p(v%15,(v>>4)%15,2,1,'#cfae6e');}};
+  switch(ch){
+    case '.': grass(); break;
+    case ',': grass(); for(let k=0;k<4;k++){const ox=k*4,oy=(k%2)*5+2;p(ox+1,oy+2,1,3,'#4e9a36');p(ox+2,oy,1,5,'#3f8a2c');p(ox+3,oy+2,1,3,'#4e9a36');} break;
+    case 'f': grass(); {const cols=['#ff6b6b','#ffffff','#ffd54f'];for(let i=0;i<3;i++){const v=(h>>>(i*7))&127;const fx=2+v%11,fy=2+(v>>3)%11;
+      p(fx-1,fy,3,1,cols[i]);p(fx,fy-1,1,3,cols[i]);p(fx,fy,1,1,'#f5a623');}} break;
+    case '#': grass(); p(3,0,10,12,'#2f7d32');p(1,2,14,8,'#2f7d32');p(2,1,12,10,'#2f7d32');p(4,2,4,3,'#46a04a');p(3,4,2,2,'#46a04a');
+      p(9,8,4,3,'#276b2a');p(6,12,4,4,'#6d4c3d');p(6,12,4,1,'#4e3529'); break;
+    case '=': path(); break;
+    case '~': {p(0,0,16,16,'#3f7fd8');const o=Math.floor(t*5+x*5)%16;p(o,4,4,1,'#8fc3ff');p((o+8)%16,11,4,1,'#8fc3ff');} break;
+    case 'R': p(0,0,16,16,'#b4533c');for(let r=0;r<16;r+=4){p(0,r+3,16,1,'#8a3b2a');p(((r/4)%2)*8+3,r,1,3,'#8a3b2a');} break;
+    case 'W': p(0,0,16,16,'#efe1bd');p(0,15,16,1,'#c9b892');if(h%2){p(4,4,8,7,'#5b4636');p(5,5,6,5,'#8fd0ff');p(8,5,1,5,'#5b4636');p(5,7,6,1,'#5b4636');} break;
+    case 'D': p(0,0,16,16,'#efe1bd');p(4,3,8,13,'#5e3d27');p(5,4,6,12,'#946243');p(10,10,1,1,'#ffd54f'); break;
+    case 'T': p(0,0,16,16,'#a7a7b3');p(0,4,16,1,'#8a8a99');p(0,9,16,1,'#8a8a99');p(0,14,16,1,'#8a8a99');
+      p(4,0,1,4,'#8a8a99');p(12,5,1,4,'#8a8a99');p(7,10,1,4,'#8a8a99');
+      if(y===2){p(0,0,3,2,'#7ccc5a');p(6,0,4,2,'#7ccc5a');p(13,0,3,2,'#7ccc5a');}
+      if(h%3===0&&y!==2){ctx.strokeStyle='#5a3d8a';ctx.beginPath();ctx.arc(sx+8,sy+7,3,0,Math.PI*2);ctx.stroke();} break;
+    case 'H': p(0,0,16,16,(x+y)%2?'#ddd6ee':'#ece8f5'); break;
+    case 'C': p(0,0,16,16,'#b83246');p(0,1,16,1,'#e0b84a');p(0,14,16,1,'#e0b84a'); break;
+    case 'P': p(0,0,16,16,(x+y)%2?'#ddd6ee':'#ece8f5');p(3,0,10,16,'#fafafa');p(3,0,2,16,'#d8d2e8');p(11,0,2,16,'#c9c1df');p(2,0,12,2,'#e8e2f2');p(2,14,12,2,'#e8e2f2'); break;
+    case 'S': grass(); p(7,9,2,6,'#6d4c3d');p(2,3,12,7,'#7a5232');p(3,4,10,5,'#c99a66');p(4,5,8,1,'#8b5e3c');p(4,7,6,1,'#8b5e3c'); break;
+    case 'G': {
+      const g=GATES[x+','+y], open=g.open();
+      if(g.style==='light'){path(); if(!open){ctx.fillStyle=`rgba(255,213,79,${.55+.25*Math.sin(t*4)})`;ctx.fillRect(sx,sy,16,16);p(7,0,2,16,'#fff6c8');}}
+      else if(g.style==='door'){path(); if(!open){p(0,0,16,16,'#6b4329');p(0,0,16,1,'#3e2616');for(let i=3;i<16;i+=4)p(i,0,1,16,'#4e3020');p(0,7,16,2,'#3e2616');p(x===3?13:0,6,3,4,'#c0392b');}}
+      else {path(); if(!open){ctx.fillStyle='rgba(126,87,194,.35)';ctx.fillRect(sx,sy,16,16);ctx.strokeStyle='#7e57c2';ctx.lineWidth=1;
+        ctx.beginPath();ctx.arc(sx+8,sy+8,6,0,Math.PI*2);ctx.stroke();
+        const a=t*3+(x%2)*Math.PI;const cx=sx+8+Math.cos(a)*6, cy=sy+8+Math.sin(a)*6;
+        ctx.beginPath();ctx.arc(cx,cy,2.5,0,Math.PI*2);ctx.stroke();p(Math.round(cx-sx+Math.cos(-a*2)*2.5)-1,Math.round(cy-sy+Math.sin(-a*2)*2.5)-1,2,2,'#ffd54f');}}
+    } break;
+    default: grass();
+  }
+}
+
+/* ---------------- content ---------------- */
+const CODEX={
+  occam:{name:'William of Occam',years:'1287–1347',look:'occam',text:`Friar from Ockham, England. Fled the Pope, died in Munich. “Don’t multiply things beyond necessity.”`},
+  copernicus:{name:'Nicolaus Copernicus',years:'1473–1543',look:'copernicus',text:`Put the Sun in the centre. Simpler — and, as evidence grew, more correct.`},
+  kepler:{name:'Johannes Kepler',years:'1571–1630',look:'kepler',text:`“Nature loves simplicity.” Replaced circles with ellipses.`},
+  galileo:{name:'Galileo Galilei',years:'1564–1642',look:'galileo',text:`You can’t feel steady motion, so the Earth can move. No need for absolute rest: motion is relative.`},
+  newton:{name:'Isaac Newton',years:'1643–1727',look:'newton',text:`Laws of motion and gravity: the same rules for apples and planets. Rule No. 1 of his Principia is the razor.`},
+  darwin:{name:'Charles Darwin',years:'1809–1882',look:'darwin',text:`Natural selection: one simple mechanism behind the variety of life.`},
+  wallace:{name:'Alfred Russel Wallace',years:'1823–1913',look:'wallace',text:`Found natural selection independently. “The theory itself is exceedingly simple.”`},
+  einstein:{name:'Albert Einstein',years:'1879–1955',look:'einstein',text:`Found general relativity “razor-first”: simplest equations first, test later.`},
+  bayes:{name:'Thomas Bayes',years:'1701–1761',look:'bayes',text:`His rule of probability shows why simpler models are more likely to be true.`},
+};
+const CODEX_ORDER=Object.keys(CODEX);
+
+const c3=(found,link,remember)=>[found,link,remember];
+// dice bar chart: [[label, value text, width %], ...]
+const bars=rows=>`<div class="bars">${rows.map(([l,v,w])=>`<div class="bar"><span>${l}</span><i><u style="width:${w}%"></u></i><b>${v}</b></div>`).join('')}</div>`;
+const BATTLES={
+  occam:{name:'William of Occam',sub:'Friar & philosopher · 1287–1347',looks:['occam'],cards:c3(
+    {t:`The Razor`,s:`“Plurality should never be posited without necessity.” In plain words: don’t add what you don’t need.`,
+      d:`Later called a “razor”: it shaves away what isn’t needed.`},
+    {t:`Pick the explanation that needs less`,s:`Keys missing? “I left them in my coat” beats “a ghost hid them”.`,
+      d:`Both fit the facts — but the ghost adds a whole new thing.`},
+    {t:`A better bet, not a guarantee`,s:`The simplest explanation isn’t always true. But it’s the smarter bet.`,
+      d:`Until the evidence demands more, stick with less.`})},
+
+  cosmos:{name:'Copernicus & Kepler',sub:'Astronomers · 1500s–1600s',looks:['copernicus','kepler'],cards:c3(
+    {t:`The Sun is at the centre`,s:`The Earth spins every day and orbits the Sun every year.`,
+      d:`Copernicus set the Earth moving. Kepler then showed the orbits are ellipses, not circles.`},
+    {t:`Dozens of circles disappear`,s:`With a moving Earth, Ptolemy’s circles-on-circles aren’t needed.`,
+      d:`E.g. Mars seems to move backwards. That’s just perspective from a moving Earth.`},
+    {t:`Simpler — and, in the end, more correct`,s:`Not more accurate at first. But as new evidence came, it fit better.`,
+      d:`Kepler’s ellipses gave far more accurate predictions. By Newton’s time (1687), the Sun-centred model was all but proven.`})},
+
+  galileo:{name:'Galileo Galilei',sub:'Astronomer & physicist · 1564–1642',looks:['galileo'],cards:c3(
+    {t:`The ship experiment`,s:`On a ship sailing smoothly, a dropped ball falls straight down, just like on land.`,
+      d:`Critics of Copernicus said: if the Earth moved, falling stones would land behind us. Galileo showed they don’t.`},
+    {t:`No “true” rest needed`,s:`No test can show who is really standing still. Motion only makes sense compared to something.`,
+      d:`So a moving Earth is possible: we simply can’t feel steady motion. The ship moves compared to the shore, and the shore compared to the ship.`},
+    {t:`Same laws, fewer assumptions`,s:`The laws of motion are the same for everyone moving steadily. No “absolute rest” needed.`,
+      d:`Fewer assumptions, same explanations: that’s the razor. Einstein later built on this idea.`})},
+
+  newton:{name:'Isaac Newton',sub:'Physicist & mathematician · 1643–1727',looks:['newton'],cards:c3(
+    {t:`Gravity and the laws of motion`,s:`Three laws of motion and one law of gravity.`,
+      d:`Published in his book Principia (1687).`},
+    {t:`One rule for Earth and sky`,s:`The force that drops an apple also keeps the Moon in orbit.`,
+      d:`Before Newton, people thought the heavens followed different rules than Earth.`},
+    {t:`His Rule No. 1 is the razor`,s:`Use only causes that are true, and enough to explain what we see.`,
+      d:`From the Principia’s “Rules of Reasoning”. Newton made simplicity a core rule of science.`})},
+
+  evolution:{name:'Darwin & Wallace',sub:'Naturalists · 1800s',looks:['darwin','wallace'],cards:c3(
+    {t:`Natural selection`,s:`Individuals differ, and differences are inherited. Helpful traits leave more offspring.`,
+      d:`Over generations, advantageous traits become more common. Announced together in 1858.`},
+    {t:`No extra assumption`,s:`Lamarck: a giraffe stretches its neck, then passes the longer neck on. Selection needs no such rule.`,
+      d:`No inherited “use and disuse”, no organisms changing on purpose. Just variation and who leaves more offspring.`},
+    {t:`A few principles, all of life`,s:`Simple, general rules explain complex adaptations and life’s diversity.`,
+      d:`Wallace: “The theory itself is exceedingly simple.”`})},
+
+  einstein:{name:'Albert Einstein',sub:'Physicist · 1879–1955',looks:['einstein'],cards:c3(
+    {t:`General relativity`,s:`Gravity is the curving of space and time. Found in 1915.`,
+      d:`It took him about ten years of struggle.`},
+    {t:`Razor first, then test`,s:`Start from the simplest, most elegant equations. Test them later.`,
+      d:`He borrowed this approach from his colleague Max Abraham. Result: a theory “of incomparable beauty”.`},
+    {t:`The razor helps build theories`,s:`Simplicity doesn’t just choose between theories. It helps find them.`,
+      d:`This experience made Einstein rethink the role of simplicity in science.`})},
+
+  bayes:{name:'Thomas Bayes',sub:'Minister & mathematician · 1701–1761',looks:['bayes'],cards:[
+    {t:`Bayes’ rule`,s:`How likely is an idea, once we see the data?`,
+      d:`P(A|B) = P(B|A) × P(A) / P(B). Key part: P(B|A), how likely the data is if the idea is true.`},
+    {kind:'dice',t:`I roll a 39`,s:`A 6-sided die can’t roll 39. So it was the 60-sided die.`,
+      viz:bars([['6-sided','0',0],['60-sided','1/120',10]]),
+      d:`Each die starts at ½. 6-sided: ½ × 0 = 0. 60-sided: ½ × 1/60 = 1/120.`},
+    {kind:'dice',t:`I roll a 5: the simple die wins`,s:`Both dice can roll a 5. But the 6-sided die is 10× more likely.`,
+      viz:bars([['6-sided','1/12',100],['60-sided','1/120',10]]),
+      d:`6-sided: ½ × 1/6 = 1/12. 60-sided: ½ × 1/60 = 1/120.`},
+    {t:`Sharp predictions win`,s:`The 6-sided die allows only 6 results; the 60-sided die allows 60. When a narrow bet comes true, it counts more.`,
+      d:`Von Neumann: “With four parameters I can fit an elephant.” Ptolemy’s huge epicycles could fit almost any sky; Kepler’s ellipses could not, so their success meant more.`},
+    {t:`Probability, not certainty`,s:`A 60-sided die does sometimes roll a 5. Complex ideas are sometimes right — but the simple one is the better bet.`,
+      d:`If two ideas fit the data equally well, the simpler is more likely true. Harold Jeffreys put this into numbers in 1939: the “Bayesian razor”.`}]},
+};
+const BATTLE_IDS=Object.keys(BATTLES);
+
+/* Audience questions, asked before each lesson (key = lesson id).
+   correct: index of the right option, or null for an opinion question. Max 4 options. */
+const QUESTIONS={
+  occam:{q:`Your keys are missing. Which explanation would you bet on?`,
+    options:[`I left them in my coat`,`A ghost hid them`,`A thief took them and put them back`],correct:0},
+  cosmos:{q:`When Copernicus put the Sun in the centre, were his predictions better than the old Earth-centred model?`,
+    options:[`Yes, much better`,`About the same`,`Much worse`],correct:1},
+  galileo:{q:`You are below deck on a ship sailing smoothly. You drop a ball. Where does it land?`,
+    options:[`Straight below your hand`,`Behind you`,`In front of you`],correct:0},
+  newton:{q:`Is the force that makes an apple fall the same one that keeps the Moon in orbit?`,
+    options:[`Yes, the same force`,`No, the sky has its own rules`,`Nothing holds the Moon`],correct:0},
+  evolution:{q:`Why do giraffes have long necks?`,
+    options:[`Parents stretched their necks and passed it on`,`Long-necked giraffes left more offspring`,`Giraffes chose to grow them`],correct:1},
+  einstein:{q:`How do you think Einstein found general relativity?`,
+    options:[`Started from the simplest, most elegant equations`,`Fitted thousands of measurements`,`By lucky accident`],correct:0},
+  bayes:{q:`Your opinion: are simpler explanations more likely to be true?`,
+    options:[`Yes, usually`,`No, nature is complicated`,`It makes no difference`],correct:null},
+};
+
+/* Live connection to the Worker. Needs live-config.js and the presenter key:
+   open the game once as index.html?key=YOUR_KEY — the key is remembered and removed from the address bar. */
+let LIVE_OFF='';
+const LIVE=(()=>{
+  const C=window.OQ_LIVE||{};
+  let key=null;
+  try{
+    const u=new URL(location.href), k=u.searchParams.get('key');
+    if(k){ localStorage.setItem('oq.presenterKey',k); u.searchParams.delete('key'); history.replaceState(null,'',u.href); }
+    key=localStorage.getItem('oq.presenterKey');
+  }catch(e){}
+  if(!C.server||/YOUR_/.test(C.server)){ LIVE_OFF='Live voting is off.<br>Set <b>server</b> in live-config.js.'; return null; }
+  if(!key){ LIVE_OFF='Live voting is off.<br>Open the game once with <b>?key=…</b> at the end of the address.'; return null; }
+  const L={connected:false,error:null,last:null,onUpdate:null,want:null,ws:null};
+  const fire=()=>{ if(L.onUpdate) try{ L.onUpdate(); }catch(e){} };
+  const wsUrl=C.server.replace(/^http/,'ws').replace(/\/+$/,'')+'/ws?role=stage&key='+encodeURIComponent(key);
+  function connect(){
+    let ws; try{ ws=new WebSocket(wsUrl); }catch(e){ setTimeout(connect,3000); return; }
+    L.ws=ws;
+    ws.onopen=()=>{ L.connected=true; L.error=null; if(L.want) ws.send(JSON.stringify(L.want)); fire(); };
+    ws.onmessage=e=>{ try{ const m=JSON.parse(e.data); if(m.t==='counts'){ L.last=m; fire(); } }catch(err){} };
+    ws.onclose=e=>{ L.connected=false;
+      if(e.code===4001){ L.error='Wrong presenter key. Open the game with ?key=… again.'; fire(); return; }
+      fire(); setTimeout(connect,2000); };
+  }
+  // the game says what it wants (open/close a round); resent automatically after a reconnect
+  L.desire=m=>{ L.want=m; if(L.ws&&L.ws.readyState===1) L.ws.send(JSON.stringify(m)); };
+  connect();
+  return L;
+})();
+
+/* ---------------- card illustrations (one SVG per card, viewBox 120×100) ---------------- */
+const ARTS=(()=>{
+  const I='#1b1b2a',P='#5a2d82',LP='#e6dcf0',G='#e3b21c',R='#d23b2e',GR='#38b24a',BL='#3b7dd8',SEA='#7fb6e6',BR='#8a5a2b',PA='#fbf7e8',GY='#9a9aa8';
+  const sv=b=>`<svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" stroke-linejoin="round" stroke-linecap="round" font-family="inherit" font-weight="800">${b}</svg>`;
+  const T=(x,y,s,o={})=>`<text x="${x}" y="${y}" font-size="${o.size||7}" fill="${o.fill||I}" text-anchor="${o.a||'middle'}" ${o.h===0?'':' stroke="#fff" stroke-width="2.4" paint-order="stroke"'}${o.it?' font-style="italic"':''}>${s}</text>`;
+  const ok=(x,y,r=6)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${GR}" stroke="${I}" stroke-width="1.2"/><path d="M${x-r*.45} ${y} l${r*.32} ${r*.35} l${r*.6} -${r*.7}" fill="none" stroke="#fff" stroke-width="${r*.32}"/>`;
+  const no=(x,y,r=6)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${R}" stroke="${I}" stroke-width="1.2"/><path d="M${x-r*.38} ${y-r*.38} l${r*.76} ${r*.76} M${x+r*.38} ${y-r*.38} l-${r*.76} ${r*.76}" stroke="#fff" stroke-width="${r*.3}"/>`;
+  const arrow=(x1,y1,x2,y2,c=I,w=1.6,dash='')=>{const a=Math.atan2(y2-y1,x2-x1),h=4;
+    return `<path d="M${x1} ${y1} L${x2} ${y2}" stroke="${c}" stroke-width="${w}" fill="none"${dash?` stroke-dasharray="${dash}"`:''}/><path d="M${x2-h*Math.cos(a-.5)} ${y2-h*Math.sin(a-.5)} L${x2} ${y2} L${x2-h*Math.cos(a+.5)} ${y2-h*Math.sin(a+.5)}" stroke="${c}" stroke-width="${w}" fill="none"/>`;};
+  const poly=(cx,cy,r,n,rot=-Math.PI/2)=>Array.from({length:n},(_,k)=>{const t=rot+k*2*Math.PI/n;return `${(cx+r*Math.cos(t)).toFixed(1)},${(cy+r*Math.sin(t)).toFixed(1)}`;}).join(' ');
+  const person=(x,y,c=P)=>`<circle cx="${x}" cy="${y-15}" r="3" fill="#e9b98c" stroke="${I}" stroke-width="1"/><path d="M${x} ${y-12} L${x} ${y-5} M${x} ${y-5} L${x-3} ${y} M${x} ${y-5} L${x+3} ${y} M${x-4} ${y-10} L${x+4} ${y-10}" stroke="${c}" stroke-width="1.8" fill="none"/>`;
+  const waves=(x1,x2,y)=>{let d=`M${x1} ${y}`;for(let x=x1;x<x2;x+=8)d+=` q2 -2.5 4 0 q2 2.5 4 0`;return `<path d="${d} L${x2} 100 L${x1} 100 Z" fill="${SEA}" stroke="${I}" stroke-width="1.1"/>`;};
+  const giraffe=(x,b,n,c=G)=>`<path d="M${x-4} ${b} v-7 M${x+4} ${b} v-7" stroke="${I}" stroke-width="1.4"/>`+
+    `<path d="M${x+4} ${b-9} L${x+6} ${b-9-n}" stroke="${I}" stroke-width="4"/><path d="M${x+4} ${b-9} L${x+6} ${b-9-n}" stroke="${c}" stroke-width="2.4"/>`+
+    `<ellipse cx="${x}" cy="${b-8}" rx="6.5" ry="3.6" fill="${c}" stroke="${I}" stroke-width="1.1"/><circle cx="${x-2}" cy="${b-8.5}" r=".9" fill="${BR}"/><circle cx="${x+2}" cy="${b-7.5}" r=".9" fill="${BR}"/>`+
+    `<ellipse cx="${x+8.5}" cy="${b-10-n}" rx="3.3" ry="2" fill="${c}" stroke="${I}" stroke-width="1.1"/>`;
+  const die6=(x,y,s,pips)=>{const p={1:[[.5,.5]],5:[[.25,.25],[.75,.25],[.5,.5],[.25,.75],[.75,.75]],6:[[.25,.22],[.75,.22],[.25,.5],[.75,.5],[.25,.78],[.75,.78]]}[pips];
+    return `<rect x="${x-s/2}" y="${y-s/2}" width="${s}" height="${s}" rx="${s*.18}" fill="#fff" stroke="${I}" stroke-width="1.4"/>`+p.map(([a,b])=>`<circle cx="${x-s/2+a*s}" cy="${y-s/2+b*s}" r="${s*.075}" fill="${I}"/>`).join('');};
+  const die60=(x,y,r,lab='60')=>`<polygon points="${poly(x,y,r,10)}" fill="${P}" stroke="${I}" stroke-width="1.4"/><polygon points="${poly(x,y,r*.55,5)}" fill="none" stroke="#b79ad6" stroke-width=".8"/>`+T(x,y+r*.18,lab,{size:r*.55,fill:'#fff',h:0});
+
+  /* Occam */
+  const occam1=sv(
+    `<circle cx="22" cy="40" r="10" fill="${P}" stroke="${I}" stroke-width="1.4"/><rect x="28" y="54" width="18" height="18" rx="2" fill="${G}" stroke="${I}" stroke-width="1.4"/><polygon points="12,74 22,58 32,74" fill="${GR}" stroke="${I}" stroke-width="1.4"/>`+
+    `<g fill="none" stroke="${GY}" stroke-width="1.3" stroke-dasharray="3 2"><circle cx="86" cy="30" r="8" transform="rotate(20 86 30)"/><rect x="92" y="48" width="14" height="14" transform="rotate(28 99 55)"/><polygon points="76,78 84,64 92,78" transform="rotate(-25 84 72)"/><path d="M100 22 q6 -6 10 2 q3 7 -4 9"/></g>`+
+    `<path d="M80 42 v6 M110 68 v6 M74 84 v5" stroke="${GY}" stroke-width="1"/>`+
+    `<rect x="57" y="4" width="10" height="16" rx="3" fill="${BR}" stroke="${I}" stroke-width="1.3"/><polygon points="57,20 67,20 67,80 57,90" fill="#dfe6ee" stroke="${I}" stroke-width="1.3"/><path d="M59 24 v60" stroke="#fff" stroke-width="1.2"/>`+
+    T(28,95,'NEEDED',{size:7})+T(96,97,'EXTRA',{size:7,fill:GY}));
+  const occam2=sv(
+    `<path d="M60 8 V94" stroke="${GY}" stroke-dasharray="3 3" stroke-width="1"/>`+
+    `<path d="M30 8 q0 -4 3 -3 M30 8 v5 M18 18 L30 13 L42 18" fill="none" stroke="${I}" stroke-width="1.3"/>`+
+    `<path d="M18 18 L30 14 L42 18 L46 70 L14 70 Z" fill="#4a6fa5" stroke="${I}" stroke-width="1.4"/><path d="M24 16 L30 30 L36 16" fill="none" stroke="${I}" stroke-width="1.2"/><path d="M30 30 V70" stroke="${I}" stroke-width="1"/>`+
+    `<circle cx="38" cy="43" r="3" fill="none" stroke="${G}" stroke-width="1.8"/><path d="M38 46 v4" stroke="${G}" stroke-width="1.8"/><rect x="33" y="47" width="10" height="9" fill="#365582" stroke="${I}" stroke-width="1.1"/>`+
+    T(30,82,'my coat',{size:7})+ok(30,92,5)+
+    `<path d="M76 66 V40 A14 14 0 0 1 104 40 V66 l-4.7 -5 l-4.7 5 l-4.7 -5 l-4.7 5 l-4.7 -5 Z" fill="#fff" stroke="${I}" stroke-width="1.4"/><ellipse cx="85" cy="40" rx="2" ry="3" fill="${I}"/><ellipse cx="95" cy="40" rx="2" ry="3" fill="${I}"/><ellipse cx="90" cy="49" rx="2.5" ry="2" fill="${I}"/>`+
+    `<circle cx="108" cy="50" r="3" fill="none" stroke="${G}" stroke-width="1.8"/><path d="M108 53 v4" stroke="${G}" stroke-width="1.8"/>`+
+    T(90,16,'+1 new thing',{size:6.5,fill:R})+T(90,82,'a ghost',{size:7})+no(90,92,5));
+  const chips=(x,b,n,c)=>{let s=`<rect x="${x-12}" y="${b-n*5}" width="24" height="${n*5}" fill="${c}" stroke="${I}" stroke-width="1.3"/>`;
+    for(let k=1;k<n;k++)s+=`<path d="M${x-12} ${b-k*5} h24" stroke="${I}" stroke-width=".8"/>`;
+    return s+`<ellipse cx="${x}" cy="${b}" rx="12" ry="3.5" fill="${c}" stroke="${I}" stroke-width="1.3"/><ellipse cx="${x}" cy="${b-n*5}" rx="12" ry="3.5" fill="${c}" stroke="${I}" stroke-width="1.3"/><ellipse cx="${x}" cy="${b-n*5}" rx="6" ry="1.7" fill="none" stroke="#fff" stroke-width="1"/>`;};
+  const occam3=sv(chips(35,78,9,G)+chips(85,78,3,LP)+T(35,24,'BETTER BET',{size:7.5,fill:'#9a6b00'})+T(85,56,'?',{size:16,fill:GY})+
+    T(35,94,'simpler',{size:8})+T(85,94,'complex',{size:8}));
+
+  /* Copernicus & Kepler */
+  let rays='';for(let k=0;k<8;k++){const t=k*Math.PI/4;rays+=`M${60+13*Math.cos(t)} ${50+13*Math.sin(t)} L${60+17*Math.cos(t)} ${50+17*Math.sin(t)} `;}
+  const cosmos1=sv(`<ellipse cx="60" cy="50" rx="48" ry="30" fill="none" stroke="${P}" stroke-width="1.3" stroke-dasharray="4 3"/>`+
+    `<path d="${rays}" stroke="${G}" stroke-width="2"/><circle cx="60" cy="50" r="10" fill="${G}" stroke="${I}" stroke-width="1.4"/>`+
+    arrow(66,20.2,54,20.2,P,1.6)+T(60,14,'1 year',{size:7,fill:P})+
+    `<circle cx="101.6" cy="65" r="6" fill="${BL}" stroke="${I}" stroke-width="1.3"/><path d="M98 63 q2 -3 5 -1 q1 3 -2 4 Z" fill="${GR}"/>`+
+    `<path d="M93 72 A10 10 0 0 0 110 72" fill="none" stroke="${I}" stroke-width="1.2"/><path d="M107 74.5 L110 72 L110.5 76" fill="none" stroke="${I}" stroke-width="1.2"/>`+T(101,88,'1 day',{size:7})+T(60,70,'SUN',{size:6.5,fill:'#9a6b00'}));
+  let epi='';[[0],[1.3],[2.6],[3.9],[5.2]].forEach(([t])=>{const x=28+18*Math.cos(t),y=46+18*Math.sin(t);epi+=`<circle cx="${x}" cy="${y}" r="6" fill="none" stroke="${GY}" stroke-width="1"/><circle cx="${x+6*Math.cos(t*2)}" cy="${y+6*Math.sin(t*2)}" r="2.6" fill="none" stroke="${GY}" stroke-width=".8"/>`;});
+  const cosmos2=sv(`<circle cx="28" cy="46" r="18" fill="none" stroke="${GY}" stroke-width="1.1" stroke-dasharray="3 2"/>${epi}<circle cx="28" cy="46" r="4" fill="${BL}" stroke="${I}"/>`+
+    T(28,80,'Ptolemy',{size:7})+no(28,92,4.5)+arrow(52,46,66,46,I,1.8)+
+    `<circle cx="92" cy="46" r="11" fill="none" stroke="${P}" stroke-width="1.2"/><circle cx="92" cy="46" r="20" fill="none" stroke="${P}" stroke-width="1.2"/><circle cx="92" cy="46" r="4.5" fill="${G}" stroke="${I}"/><circle cx="103" cy="46" r="2.5" fill="${BL}" stroke="${I}" stroke-width=".8"/><circle cx="78" cy="32" r="2.5" fill="${R}" stroke="${I}" stroke-width=".8"/>`+
+    T(92,80,'Copernicus',{size:7})+ok(92,92,4.5));
+  const ell=t=>[60+46*Math.cos(t),48+28*Math.sin(t)];
+  const cosmos3=sv(`<circle cx="60" cy="48" r="36" fill="none" stroke="${GY}" stroke-width="1.2" stroke-dasharray="3 3"/>`+
+    `<ellipse cx="60" cy="48" rx="46" ry="28" fill="none" stroke="${P}" stroke-width="1.8"/><circle cx="96.5" cy="48" r="5" fill="${G}" stroke="${I}" stroke-width="1.2"/>`+
+    [0.4,1.2,1.9,2.7,3.3,4.1,4.9,5.6].map(t=>{const[x,y]=ell(t);return `<path d="M${x-2.5} ${y-2.5} l5 5 M${x+2.5} ${y-2.5} l-5 5" stroke="${R}" stroke-width="1.6"/>`;}).join('')+
+    `<path d="M8 90 h10" stroke="${P}" stroke-width="1.8"/>`+T(21,92,'ellipse: fits',{size:6.5,a:'start'})+`<path d="M80 90 h10" stroke="${GY}" stroke-width="1.2" stroke-dasharray="3 3"/>`+T(93,92,'circle',{size:6.5,a:'start',fill:GY})+
+    `<path d="M50 6 l3 3 M53 6 l-3 3" stroke="${R}" stroke-width="1.4"/>`+T(57,9,'= observations',{size:6,a:'start'}));
+
+  /* Galileo */
+  const galileo1=sv(`<path d="M16 66 L104 66 L92 80 L28 80 Z" fill="${BR}" stroke="${I}" stroke-width="1.4"/>${waves(0,120,82)}`+
+    `<path d="M62 66 V12" stroke="${I}" stroke-width="2"/><path d="M64 16 L64 58 L96 58 Z" fill="${PA}" stroke="${I}" stroke-width="1.3"/>`+
+    `<path d="M56 18 V60" stroke="${R}" stroke-width="1" stroke-dasharray="2 3"/>`+[22,33,44].map(y=>`<circle cx="56" cy="${y}" r="3" fill="${R}" opacity=".3"/>`).join('')+`<circle cx="56" cy="62" r="3.2" fill="${R}" stroke="${I}"/>`+
+    arrow(8,10,34,10,I,1.8)+T(21,20,'steady',{size:6.5})+T(50,36,'falls',{size:6.5,fill:R,a:'end'})+T(50,44,'straight',{size:6.5,fill:R,a:'end'})+T(50,52,'down',{size:6.5,fill:R,a:'end'}));
+  const galileo2=sv(`<path d="M0 72 H50 V100 H0 Z" fill="#a8d47a" stroke="${I}" stroke-width="1.1"/>`+
+    `<path d="M14 72 V58" stroke="${BR}" stroke-width="3"/><circle cx="14" cy="52" r="8" fill="${GR}" stroke="${I}" stroke-width="1.2"/>${person(34,72,BR)}`+
+    `${waves(50,120,76)}<path d="M62 64 L108 64 L102 74 L68 74 Z" fill="${BR}" stroke="${I}" stroke-width="1.2"/>${person(86,64)}`+
+    `<rect x="4" y="8" width="50" height="17" rx="4" fill="#fff" stroke="${I}" stroke-width="1.1"/><path d="M30 25 l3 7 l3 -7" fill="#fff" stroke="${I}" stroke-width="1.1"/><path d="M30.5 24.6 h5" stroke="#fff" stroke-width="1.6"/>`+T(29,19,'You move!',{size:7})+
+    `<rect x="64" y="8" width="52" height="17" rx="4" fill="#fff" stroke="${I}" stroke-width="1.1"/><path d="M84 25 l3 7 l3 -7" fill="#fff" stroke="${I}" stroke-width="1.1"/><path d="M84.5 24.6 h5" stroke="#fff" stroke-width="1.6"/>`+T(90,19,'No, YOU do!',{size:7})+
+    arrow(70,90,104,90,I,1.8)+arrow(42,90,10,90,I,1.8));
+  const lab=x=>`<rect x="${x}" y="12" width="42" height="48" rx="2" fill="#fff" stroke="${I}" stroke-width="1.4"/><path d="M${x+24} 19 V51" stroke="${R}" stroke-width="1" stroke-dasharray="2 3"/><circle cx="${x+24}" cy="19" r="3" fill="${R}" opacity=".35"/><circle cx="${x+24}" cy="54" r="3.2" fill="${R}" stroke="${I}"/><path d="M${x+8} 18 L${x+13} 42" stroke="${I}" stroke-width="1"/><circle cx="${x+13}" cy="42" r="2.6" fill="${P}"/>`;
+  const galileo3=sv(lab(6)+`<path d="M2 61 H52" stroke="${GR}" stroke-width="3"/>`+lab(72)+`<path d="M68 61 L118 61 L111 69 L75 69 Z" fill="${BR}" stroke="${I}" stroke-width="1.2"/>`+arrow(80,5,108,5,I,1.6)+
+    T(60,42,'=',{size:22,fill:P})+T(27,78,'on land',{size:7})+T(93,78,'on a ship',{size:7})+
+    T(60,94,'ABSOLUTE REST',{size:7,fill:GY})+`<path d="M30 91.5 H90" stroke="${R}" stroke-width="1.8"/>`);
+
+  /* Newton */
+  const newton1=sv(`<path d="M10 22 Q34 15 60 22 V80 Q34 73 10 80 Z" fill="${PA}" stroke="${I}" stroke-width="1.4"/><path d="M60 22 Q86 15 110 22 V80 Q86 73 60 80 Z" fill="${PA}" stroke="${I}" stroke-width="1.4"/>`+
+    T(35,50,'3',{size:24,fill:P})+T(35,62,'laws of',{size:6.5})+T(35,70,'motion',{size:6.5})+
+    `<circle cx="85" cy="42" r="9" fill="${R}" stroke="${I}" stroke-width="1.3"/><path d="M85 33 q1 -4 4 -5" fill="none" stroke="${BR}" stroke-width="1.5"/><path d="M87 32 q5 -3 8 0 q-4 3 -8 0" fill="${GR}" stroke="${I}" stroke-width=".8"/>`+T(85,62,'1 law of',{size:6.5})+T(85,70,'gravity',{size:6.5})+
+    T(60,94,'PRINCIPIA · 1687',{size:7.5,it:1}));
+  const newton2=sv(`<circle cx="26" cy="122" r="50" fill="${BL}" stroke="${I}" stroke-width="1.4"/><path d="M0 84 q14 -10 30 -6 q10 6 26 2 L60 100 L0 100Z" fill="${GR}" opacity=".85"/>`+
+    `<path d="M108 20 A100 100 0 0 0 46 22" fill="none" stroke="${GY}" stroke-width="1.1" stroke-dasharray="3 3"/>`+
+    `<path d="M24 73 V58" stroke="${BR}" stroke-width="3"/><circle cx="24" cy="50" r="10" fill="${GR}" stroke="${I}" stroke-width="1.2"/>`+
+    `<circle cx="38" cy="50" r="2.8" fill="${R}" stroke="${I}" stroke-width=".8"/>`+arrow(38,55,38,68,R,1.6)+
+    `<circle cx="96" cy="22" r="8" fill="#d8d8e0" stroke="${I}" stroke-width="1.3"/><circle cx="93" cy="20" r="1.6" fill="#b5b5c2"/><circle cx="99" cy="25" r="1.2" fill="#b5b5c2"/>`+arrow(90,30,74,48,R,1.6)+
+    T(84,62,'same pull',{size:7.5,fill:R})+T(96,10,'Moon',{size:6.5})+T(48,48,'apple',{size:6.5,a:'start'}));
+  const newton3=sv(`<rect x="6" y="10" width="108" height="82" rx="3" fill="${PA}" stroke="${I}" stroke-width="1.4"/><path d="M6 26 H114" stroke="${I}" stroke-width="1"/>`+T(60,21,'RULE No. 1',{size:8,fill:P})+
+    ok(20,40,5)+T(29,42.5,'causes that are true',{size:6.4,a:'start'})+ok(20,58,5)+T(29,60.5,'enough to explain',{size:6.4,a:'start'})+
+    no(20,76,5)+T(29,78.5,'anything extra',{size:6.4,a:'start',fill:GY})+`<path d="M28 76 H82" stroke="${R}" stroke-width="1.4"/>`);
+
+  /* Darwin & Wallace */
+  const evo1=sv(`<path d="M112 96 V30" stroke="${BR}" stroke-width="4"/><circle cx="111" cy="22" r="7.5" fill="${GR}" stroke="${I}" stroke-width="1.2"/>`+
+    [[10,5],[26,15],[42,8],[58,17],[74,10]].map(([x,n])=>giraffe(x,46,n)).join('')+
+    [[10,16],[26,15],[42,18],[58,17],[74,15]].map(([x,n])=>giraffe(x,96,n)).join('')+
+    `<path d="M0 46.5 H104 M0 96.5 H104" stroke="${I}" stroke-width=".8"/>`+arrow(96,50,96,66,P,1.6)+T(93,56,'many',{size:5.5,a:'end',fill:P})+T(93,63,'generations',{size:5.5,a:'end',fill:P}));
+  const evo2=sv(giraffe(20,72,26)+`<circle cx="34" cy="16" r="9" fill="${GR}" stroke="${I}" stroke-width="1.2"/>`+arrow(36,60,36,44,P,1.4)+arrow(42,62,42,46,P,1.4)+T(22,86,'stretches',{size:6.5})+
+    arrow(52,60,70,60,I,1.6)+giraffe(92,72,24,'#f0c84c')+T(90,86,'baby inherits?',{size:6})+
+    `<path d="M50 30 L72 56 M72 30 L50 56" stroke="${R}" stroke-width="4"/>`+T(60,98,'an extra rule, not needed',{size:6.5,fill:R}));
+  const tips=[[16,20,R],[30,18,G],[46,14,BL],[66,18,P],[78,14,GR],[92,20,'#e07b39'],[108,22,'#2aa7a1']];
+  const evo3=sv(`<path d="M60 92 V70 M60 70 L40 54 M60 70 L80 54 M40 54 L25 38 M40 54 L47 34 M80 54 L72 36 M80 54 L97 40 M25 38 L16 22 M25 38 L30 20 M47 34 L46 16 M72 36 L66 20 M72 36 L78 16 M97 40 L92 22 M97 40 L108 24" fill="none" stroke="${BR}" stroke-width="2.4"/>`+
+    tips.map(([x,y,c],k)=>k%2?`<circle cx="${x}" cy="${y}" r="4.5" fill="${c}" stroke="${I}" stroke-width="1"/>`:`<rect x="${x-4}" y="${y-4}" width="8" height="8" rx="2" fill="${c}" stroke="${I}" stroke-width="1" transform="rotate(45 ${x} ${y})"/>`).join('')+
+    `<circle cx="60" cy="92" r="4" fill="${G}" stroke="${I}" stroke-width="1.2"/>`+T(60,8,'all of life’s diversity',{size:6.5})+T(67,92,'one simple',{size:6.3,a:'start'})+T(67,99,'rule',{size:6.3,a:'start'}));
+
+  /* Einstein */
+  const warp=(x,y)=>{const dx=x-60,dy=y-52,r2=dx*dx+dy*dy,f=1-.45*Math.exp(-r2/500);return [60+dx*f,52+dy*f+9*Math.exp(-r2/700)];};
+  let grid='';for(let v=8;v<=96;v+=11){let a='',b='';for(let u=4;u<=116;u+=4){const[p,q]=warp(u,v);a+=(a?'L':'M')+p.toFixed(1)+' '+q.toFixed(1);}
+    for(let u=4;u<=96;u+=4){const[p,q]=warp(v*1.2+2,u);b+=(b?'L':'M')+p.toFixed(1)+' '+q.toFixed(1);}grid+=`<path d="${a}"/><path d="${b}"/>`;}
+  const ein1=sv(`<g fill="none" stroke="#9fb4d8" stroke-width=".9">${grid}</g><circle cx="60" cy="58" r="10" fill="${G}" stroke="${I}" stroke-width="1.4"/>`+
+    `<ellipse cx="60" cy="56" rx="38" ry="14" fill="none" stroke="${P}" stroke-width="1.1" stroke-dasharray="3 2"/><circle cx="96" cy="60" r="4" fill="${BL}" stroke="${I}"/>`+T(60,96,'mass curves space and time',{size:6.5,fill:P}));
+  let tangle='M10 20';for(let k=0;k<9;k++)tangle+=` c${4+k%3*3} -${8+k%4*2} ${10-k%2*6} ${10+k%3*3} ${3+k%2*2} -${2+k%3}`;
+  const ein2=sv(`<path d="${tangle}" fill="none" stroke="${GY}" stroke-width="1.2"/><path d="M8 6 L52 34 M52 6 L8 34" stroke="${R}" stroke-width="1.8"/>`+T(86,18,'too complex:',{size:6.3,fill:GY})+T(86,26,'10 years, no luck',{size:6.3,fill:GY})+
+    `<path d="M30 46 a12 12 0 0 1 8 21 v4 h-16 v-4 a12 12 0 0 1 8 -21 Z" fill="${G}" stroke="${I}" stroke-width="1.4"/><rect x="23" y="71" width="14" height="6" rx="1.5" fill="${GY}" stroke="${I}" stroke-width="1.1"/>`+
+    `<path d="M30 38 v-4 M16 44 l-3 -3 M44 44 l3 -3 M12 56 h-4 M48 56 h4" stroke="${G}" stroke-width="1.6"/>`+
+    arrow(54,58,72,58,I,1.8)+
+    `<path d="M80 62 L104 48 L107 54 L83 68 Z" fill="${GY}" stroke="${I}" stroke-width="1.2"/><path d="M90 64 L86 76 M90 64 L96 76" stroke="${I}" stroke-width="1.4"/><circle cx="111" cy="40" r="2.2" fill="${G}"/>`+ok(108,66,5)+
+    T(30,90,'1 · start simple',{size:6.3})+T(92,90,'2 · then test',{size:6.3}));
+  const dead=[[46,18],[40,84],[70,10],[66,92],[88,22],[92,82],[104,30]];
+  const ein3=sv(dead.map(([x,y],k)=>`<path d="M12 52 C${30+k*3} ${52+(y-52)*.2} ${x-14} ${y} ${x} ${y}" fill="none" stroke="${GY}" stroke-width="1.1" stroke-dasharray="2.5 2"/><path d="M${x-2} ${y-2} l4 4 M${x+2} ${y-2} l-4 4" stroke="${GY}" stroke-width="1.2"/>`).join('')+
+    `<path d="M12 52 C40 46 70 58 98 50" fill="none" stroke="${P}" stroke-width="2.6"/><polygon points="${Array.from({length:10},(_,k)=>{const r=k%2?4:9,t=-Math.PI/2+k*Math.PI/5;return `${(106+r*Math.cos(t)).toFixed(1)},${(50+r*Math.sin(t)).toFixed(1)}`;}).join(' ')}" fill="${G}" stroke="${I}" stroke-width="1.2"/>`+
+    `<circle cx="12" cy="52" r="4" fill="${P}" stroke="${I}"/>`+T(56,42,'simplicity',{size:6.5,fill:P})+T(56,68,'finds the theory',{size:6.5,fill:P}));
+
+  /* Bayes */
+  const bayes1=sv(`<rect x="10" y="62" width="20" height="18" fill="${LP}" stroke="${I}" stroke-width="1.3"/>`+T(20,90,'before',{size:7})+
+    arrow(34,64,44,64,I,1.6)+`<rect x="46" y="44" width="28" height="36" rx="2" fill="#fff" stroke="${I}" stroke-width="1.3"/>`+
+    [[52,72],[56,64],[60,66],[64,56],[68,52],[56,58],[66,60]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.6" fill="${BL}"/>`).join('')+T(60,90,'data',{size:7})+
+    arrow(76,64,86,64,I,1.6)+`<rect x="90" y="24" width="20" height="56" fill="${P}" stroke="${I}" stroke-width="1.3"/>`+T(100,90,'after',{size:7})+
+    `<path d="M4 80 H116" stroke="${I}" stroke-width="1.2"/>`+T(60,16,'how likely is my idea?',{size:7,fill:P}));
+  const bubble=(n)=>`<circle cx="60" cy="20" r="13" fill="${G}" stroke="${I}" stroke-width="1.3"/>`+T(60,25.5,n,{size:14,h:0})+T(60,42,'I rolled…',{size:6.5});
+  const bayes2=sv(bubble('39')+die6(28,60,26,6)+die60(92,60,16)+no(28,88,5.5)+ok(92,88,5.5)+T(28,98,'can’t',{size:6})+T(92,98,'can',{size:6}));
+  const bayes3=sv(bubble('5')+`<circle cx="30" cy="62" r="22" fill="#fff3c4" stroke="#ffd54f" stroke-width="2"/>`+die6(30,62,26,5)+die60(92,62,13)+
+    T(32,94,'10× more likely',{size:6.2,fill:'#9a6b00'})+T(92,94,'possible',{size:6.8,fill:GY}));
+
+  const cells=(x,y,cols,rows,c,hit)=>{let o='';for(let r=0;r<rows;r++)for(let q=0;q<cols;q++){const k=r*cols+q;o+=`<rect x="${x+q*c}" y="${y+r*c}" width="${c}" height="${c}" fill="${k===hit?G:'#fff'}" stroke="${I}" stroke-width="${c>8?1.1:.6}"/>`;}return o;};
+  const bayes4=sv(T(60,12,'possible results',{size:7,fill:P})+cells(10,38,3,2,12,4)+cells(54,30,10,6,6,4)+
+    T(28,76,'6-sided',{size:6.5})+T(28,84,'sharp bet',{size:6.3,fill:GR})+T(84,76,'60-sided',{size:6.5})+T(84,84,'fits anything',{size:6.3,fill:GY})+
+    `<rect x="34" y="92" width="6" height="6" fill="${G}" stroke="${I}" stroke-width=".8"/>`+T(43,97.5,'= the roll we saw',{size:6,a:'start'}));
+  const bayes5=sv(T(60,12,'I rolled a 5…',{size:7})+`<path d="M60 34 V90 M48 92 H72" stroke="${BR}" stroke-width="3"/><polygon points="60,30 56,36 64,36" fill="${BR}"/>`+
+    `<path d="M28 50 L92 34" stroke="${BR}" stroke-width="3"/>`+
+    `<path d="M28 50 L19 66 M28 50 L37 66 M92 34 L83 50 M92 34 L101 50" stroke="${I}" stroke-width=".9"/>`+
+    `<path d="M16 66 H40 Q28 73 16 66 Z" fill="${GY}" stroke="${I}" stroke-width="1.1"/><path d="M80 50 H104 Q92 57 80 50 Z" fill="${GY}" stroke="${I}" stroke-width="1.1"/>`+
+    die6(28,59,14,5)+die60(92,42.5,8.5)+
+    T(28,82,'more likely',{size:6.5,fill:'#9a6b00'})+T(92,66,'still possible',{size:6,fill:GY}));
+
+  return {occam:[occam1,occam2,occam3],cosmos:[cosmos1,cosmos2,cosmos3],galileo:[galileo1,galileo2,galileo3],newton:[newton1,newton2,newton3],
+    evolution:[evo1,evo2,evo3],einstein:[ein1,ein2,ein3],bayes:[bayes1,bayes2,bayes3,bayes4,bayes5]};
+})();
+
+
+/* NPC definitions */
+const cosmosPre=[{who:'Copernicus',text:`Copernicus here. For 1400 years people followed Ptolemy: Earth in the centre, planets on circles riding on circles.`},
+  {who:'Kepler',text:`And I’m Kepler. We both found a much simpler way.`}];
+const evoPre=[{who:'Darwin',text:`Charles Darwin. I spent 20 years collecting evidence for evolution.`},
+  {who:'Wallace',text:`Alfred Russel Wallace. I found the same idea on my own, in Southeast Asia. We announced it together in 1858.`}];
+const NPCS=[
+  {id:'occam',name:'William of Occam',x:8,y:6,dir:'down',battle:'occam',
+    pre:[`Welcome to Ockham! I’m William, a Franciscan friar, born around 1287.`,
+      `Accused of heresy, I fled the Pope in 1328. I died in Munich in 1347.`,
+      `But I’m remembered for one simple idea.`],
+    after:[`Fewer assumptions, same facts. Better bet.`],
+    onWin:async()=>{await say([{sys:`You got OCCAM’S RAZOR! Head east: two astronomers are waiting.`,sfx:'item'}]);}},
+  {id:'copernicus',name:'Copernicus',x:24,y:6,dir:'down',battle:'cosmos',requires:'occam',
+    requiresMsg:[`Talk to William of Occam first — you’ll need his razor.`],pre:cosmosPre,
+    after:[`The Sun in the middle: fewer circles, same sky.`],
+    onWin:async()=>{await say([{sys:`The wall of spinning circles dissolves! The road south is open.`}]);}},
+  {id:'kepler',name:'Kepler',x:25,y:6,dir:'down',battle:'cosmos',requires:'occam',
+    requiresMsg:[`Talk to William of Occam first — you’ll need his razor.`],pre:cosmosPre,
+    after:[`“Nature loves simplicity.”`],
+    onWin:async()=>{await say([{sys:`The wall of spinning circles dissolves! The road south is open.`}]);}},
+
+  {id:'galileo',name:'Galileo Galilei',x:21,y:17,dir:'down',battle:'galileo',
+    pre:[`Galileo Galilei. People asked me: if the Earth moves, why don’t we feel it?`,
+      `Imagine you are inside a ship on a calm sea. Let me show you.`],
+    after:[`Same laws at any steady speed. No absolute rest needed.`]},
+  {id:'newton',name:'Isaac Newton',x:8,y:17,dir:'down',battle:'newton',requires:'galileo',
+    requiresMsg:[`Isaac Newton. Speak to Galileo first — I stand on his shoulders.`],
+    pre:[`Isaac Newton. Gravity — and my first rule of reasoning.`],
+    after:[`True and sufficient. Then stop.`],
+    onWin:async()=>{await say([{sys:`You got NEWTON’S SEAL! The door south is open.`,sfx:'item'}]);}},
+
+  {id:'darwin',name:'Darwin',x:11,y:28,dir:'down',battle:'evolution',pre:evoPre,
+    after:[`Fewer assumptions, same facts. Occam would approve.`],
+    onWin:async()=>{await say([{sys:`A golden light flares to the east: Einstein is waiting.`,sfx:'item'}]);}},
+  {id:'wallace',name:'Wallace',x:12,y:28,dir:'down',battle:'evolution',pre:evoPre,
+    after:[`“The theory itself is exceedingly simple.”`],
+    onWin:async()=>{await say([{sys:`A golden light flares to the east: Einstein is waiting.`,sfx:'item'}]);}},
+
+  {id:'einstein',name:'Albert Einstein',x:27,y:29,dir:'left',battle:'einstein',
+    pre:[`Albert Einstein. For ten years, my complex equations got me nowhere.`,
+      `So I changed tack. Here’s what I learned.`],
+    after:[`Start simple, then test.`],
+    onWin:async()=>{
+      await say([`But why should simple theories be more likely true?`,
+        `Ask Thomas Bayes. He waits just south of my study.`],'Albert Einstein');
+      await say([{sys:`The golden light below the study fades. One last stop: Bayes.`,sfx:'item'}]);
+    }},
+
+  {id:'bayes',name:'Thomas Bayes',x:21,y:34,dir:'down',battle:'bayes',requires:'einstein',
+    requiresMsg:[`Thomas Bayes. Come back after you’ve met Einstein.`],
+    intro:async who=>{
+      await say([`Thomas Bayes. Are simpler ideas more likely to be true? Let’s play a game!`],who);
+      await diceGame();
+      await say([`You just used my rule from the 1700s! Let’s see why it works.`],who);
+    },
+    after:[`Simple models make sharp predictions.`],
+    onWin:async()=>{
+      await say([`From Ockham to today, the razor kept science sharp.`,
+        `Simple theories aren’t always true. But they’re the better bet.`,
+        `And because they make sharp predictions, they are easy to test. A philosopher explained why that matters…`],'Thomas Bayes');
+      await showEnd();
+    }},
+];
+for(const n of NPCS){ if(!n.look) n.look=n.id; n.codex=n.codex||(CODEX[n.id]?n.id:null); }
+const npcAt=(x,y)=>NPCS.find(n=>n.x===x&&n.y===y);
+
+/* ---------------- state ---------------- */
+const SAVE='occamsQuest.v3';
+const player={x:5,y:6,dir:'right',moving:false,tx:5,ty:6,t:0,parity:0};
+let mode='title', busy=false;
+function save(){ try{localStorage.setItem(SAVE,JSON.stringify({flags,x:player.x,y:player.y,dir:player.dir}));}catch(e){} }
+function load(){ try{const s=JSON.parse(localStorage.getItem(SAVE)||'null'); if(s&&s.flags){Object.assign(flags,s.flags);player.x=player.tx=s.x;player.y=player.ty=s.y;player.dir=s.dir||'down';return true;}}catch(e){} return false; }
+function wipe(){ try{localStorage.removeItem(SAVE);}catch(e){} for(const k in flags) delete flags[k]; Object.assign(player,{x:5,y:6,tx:5,ty:6,dir:'right',moving:false,t:0}); }
+
+function updateHud(){
+  const won=BATTLE_IDS.filter(b=>flags[b]).length;
+  const met=CODEX_ORDER.filter(k=>flags['met_'+k]).length;
+  $('hud').innerHTML=`${flags.occam?'<span>✂ Razor</span>':''}${flags.newton?'<span>⚜ Seal</span>':''}<span>★ ${won}/${BATTLE_IDS.length}</span><span>📖 ${met}/${CODEX_ORDER.length} [C]</span><button class="rbtn" id="hudSound">${muted?'🔇':'♪'}</button><button class="rbtn" id="hudRestart">↺ Restart</button>`;
+  const m=$('hudSound'); m.onmousedown=e=>e.preventDefault(); m.onclick=toggleSound;
+  const b=$('hudRestart'); b.onmousedown=e=>e.preventDefault(); b.onclick=restart;
+}
+function toggleSound(){ muted=!muted; updateHud(); }
+function restart(){ if(confirm('Restart the game from the beginning?')){ wipe(); location.reload(); } }
+function meet(n){ if(n.codex) flags['met_'+n.codex]=true; flags['talked_'+n.id]=true; updateHud(); }
+
+/* ---------------- text engine ---------------- */
+let typing=null, waiter=null;
+function typeText(el,text){ el.textContent=text; sfx.blip(); return Promise.resolve(); }
+const waitOk=()=>new Promise(res=>{waiter={type:'ok',res};});
+
+async function say(lines,who){
+  const prev=mode; mode='dialog';
+  const box=$('dialog'), nm=$('dName'), tx=$('dText'), more=$('dMore');
+  box.classList.remove('hidden');
+  for(const L of lines){
+    const isSys=typeof L==='object'&&'sys' in L;
+    const text=isSys?L.sys:(typeof L==='object'?L.text:L);
+    const speaker=typeof L==='object'&&L.who?L.who:who;
+    nm.textContent=isSys?'':(speaker||''); nm.classList.toggle('hidden',isSys||!speaker);
+    tx.classList.toggle('sys',isSys);
+    if(isSys&&L.sfx) sfx[L.sfx]();
+    more.classList.add('hidden');
+    await typeText(tx,text);
+    more.classList.remove('hidden');
+    await waitOk();
+  }
+  box.classList.add('hidden');
+  mode=prev==='dialog'?'world':prev;
+}
+
+/* ---------------- lesson ---------------- */
+const KINDS=[{icon:'🔭',label:'WHAT THEY FOUND'},{icon:'✂',label:'THE SIMPLICITY LINK'},{icon:'💡',label:'REMEMBER'}];
+const EXTRA={before:{icon:'📜',label:'THE OLD IDEA'},dice:{icon:'🎲',label:'THE DICE GAME'}};
+const kindsFor=cards=>{let i=0;return cards.map(c=>c.kind?EXTRA[c.kind]:KINDS[i++]);};
+async function runLesson(id){
+  const B=BATTLES[id];
+  const prev=mode; mode='battle'; pauseMusic(); sfx.encounter();
+  const cvs=$('lCv'), n=B.looks.length;
+  cvs.width=16*n; const c=cvs.getContext('2d'); c.clearRect(0,0,cvs.width,19);
+  B.looks.forEach((l,i)=>drawSprite(c,16*i,3,LOOKS[l],'down',0));
+  cvs.style.width=`calc(var(--s)*${46*n}px)`;
+  $('lName').textContent=B.name; $('lSub').textContent=B.sub;
+  const cards=$('lCards'), dots=$('lDots'), hint=$('lHint');
+  const KD=kindsFor(B.cards), N=B.cards.length, art=ARTS[id]||[];
+  const setDots=k=>{dots.textContent=B.cards.map((_,i)=>i<k?'★':'☆').join(' ');};
+  $('lesson').classList.remove('hidden'); flash($('lHead'),'slidein');
+  for(let i=0;i<N;i++){
+    const k=B.cards[i];
+    cards.innerHTML=`<div class="lcard solo">${art[i]?`<div class="lart">${art[i]}</div>`:''}<div class="lbody"><div class="lkind">${KD[i].icon} ${KD[i].label} · ${i+1}/${N}</div><div class="lt">${k.t}</div><div class="ld">${k.s}</div>${k.viz||''}<div class="lmore">${k.d}</div></div></div>`;
+    flash(cards.firstChild,'pop'); setDots(i+1);
+    if(i<N-1){ sfx.good(); hint.textContent=`SPACE: next point  ·  I: more detail`; }
+    else { sfx.win(); hint.textContent=`SPACE: continue  ·  I: more detail`; }
+    await waitOk();
+  }
+  $('lesson').classList.add('hidden'); resumeMusic();
+  mode=prev==='battle'?'world':prev;
+}
+/* ---------------- Bayes' dice game ---------------- */
+let diceHandler=null;
+const diceKey=allowed=>new Promise(res=>{diceHandler=k=>{
+  k={left:'one',right:'two',s1:'one',s2:'two'}[k]||k;
+  if(allowed.includes(k)){ diceHandler=null; res(k); }
+};});
+$('dOpt6').onclick=()=>diceHandler&&diceHandler('one');
+$('dOpt60').onclick=()=>diceHandler&&diceHandler('two');
+$('dMid').onclick=()=>diceHandler&&diceHandler('ok');
+const pct=(l,p)=>`<div class="bar"><span>${l}</span><i><u style="width:${p}%"></u></i><b>${p}%</b></div>`;
+async function diceGame(){
+  const prev=mode; mode='dice';
+  const o6=$('dOpt6'), o60=$('dOpt60'), sub=$('dSub'), num=$('dNum'), res=$('dRes'), hint=$('dHint');
+  $('dice').classList.remove('hidden'); flash($('dHead'),'slidein');
+  paintCanvas($('dCv'),LOOKS.bayes,'down');
+  const ROUNDS=[[60,39],[6,5]];   // [die, number] — these match the lesson cards
+  let round=0, score=0;
+  for(const [die,n] of ROUNDS){
+    round++;
+    sub.textContent=`Round ${round} · Score ${score}/${round-1}`;
+    o6.className=o60.className='dopt'; res.innerHTML=''; hint.textContent='';
+    $('dSay').textContent=`I threw one die in secret. I call out…`;
+    for(let i=0;i<12;i++){ num.textContent=1+Math.floor(Math.random()*60); sfx.blip(); await new Promise(r=>setTimeout(r,55)); }
+    num.textContent=n; flash(num,'pop'); sfx.good();
+    hint.textContent=`Which die was it? Press 1 or 2 — or click a die`;
+    const guess=(await diceKey(['one','two']))==='one'?6:60, right=guess===die;
+    if(right) score++;
+    right?sfx.win():sfx.bad();
+    (die===6?o6:o60).classList.add('actual'); (die===6?o60:o6).classList.add('dim');
+    sub.textContent=`Round ${round} · Score ${score}/${round}`;
+    const head=`<div class="rh ${right?'ok':'no'}">${right?'✓ Correct!':'✗ Not this time.'} It was the ${die}-sided die.</div>`;
+    res.innerHTML=n>6
+      ? head+`Only the 60-sided die can roll ${n}.<div class="dbars">${pct('6-sided',0)}${pct('60-sided',100)}</div>`
+      : head+`Both dice can roll ${n}. But the 6-sided die rolls it 10× more often.`
+        +`<div class="dbars">${pct('6-sided',91)}${pct('60-sided',9)}</div>`;
+    hint.textContent=round<ROUNDS.length?`SPACE: next roll`:`SPACE: continue`;
+    await diceKey(['ok']);
+  }
+  $('dice').classList.add('hidden');
+  mode=prev==='dice'?'world':prev;
+}
+
+/* ---------------- audience poll ---------------- */
+let pollHandler=null;
+const pollKey=()=>new Promise(res=>{pollHandler=k=>{ if(k==='ok'){ pollHandler=null; res(); } };});
+$('poll').onclick=()=>pollHandler&&pollHandler('ok');
+function voteUrl(){
+  const C=window.OQ_LIVE||{};
+  if(/^https?:$/.test(location.protocol)) return new URL('vote.html',location.href).href;
+  return C.voteUrl&&!/YOUR_/.test(C.voteUrl)?C.voteUrl:null;
+}
+async function runPoll(id){
+  const Q=QUESTIONS[id]; if(!Q||flags['poll_'+id]) return;
+  const B=BATTLES[id], prev=mode; mode='poll'; sfx.encounter();
+  const cvs=$('pollCv'), n=B.looks.length;
+  cvs.width=16*n; const c=cvs.getContext('2d'); c.clearRect(0,0,cvs.width,19);
+  B.looks.forEach((l,i)=>drawSprite(c,16*i,3,LOOKS[l],'down',0));
+  cvs.style.width=`calc(var(--s)*${36*n}px)`;
+  $('pollName').textContent=B.name; $('pollQ').textContent=Q.q;
+  const box=$('pollOpts'), side=$('pollSide'), el=$('poll');
+  box.innerHTML=Q.options.map((o,i)=>`<div class="popt"><div class="pf"></div><span class="pl">${'ABCD'[i]}</span><span></span><b class="pn">0</b></div>`).join('');
+  box.querySelectorAll('.popt').forEach((d,i)=>d.children[2].textContent=Q.options[i]);
+  el.classList.remove('reveal','graded'); el.classList.remove('hidden'); flash($('pollHead'),'slidein');
+
+  let counts=Q.options.map(()=>0), total=0;
+  const url=LIVE&&voteUrl(), round=Date.now();
+  if(url){
+    side.innerHTML=`<div id="pollQr"></div><div class="pscan">📱 Scan to answer</div><div class="purl"></div><div class="pcount" id="pollCount">0<small>ANSWERS</small></div><div class="plive" id="pollLive"></div>`;
+    side.querySelector('.purl').textContent=url.replace(/^https?:\/\//,'');
+    try{ new QRCode($('pollQr'),{text:url,width:256,height:256,colorDark:'#1b1b2a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }
+    catch(e){ $('pollQr').textContent='(QR library failed to load)'; }
+    const upd=()=>{
+      const m=LIVE.last;
+      if(m&&m.n===round&&Array.isArray(m.counts)){
+        if(m.total>total) sfx.blip();
+        counts=Q.options.map((_,i)=>m.counts[i]||0); total=m.total;
+        $('pollCount').firstChild.textContent=total;
+      }
+      const lv=$('pollLive');
+      if(LIVE.error){ lv.className='plive bad'; lv.textContent=LIVE.error; }
+      else if(LIVE.connected){ lv.className='plive ok'; lv.textContent=`● ${m?m.phones:0} phone${m&&m.phones===1?'':'s'} connected`; }
+      else { lv.className='plive'; lv.textContent='○ connecting…'; }
+    };
+    LIVE.onUpdate=upd;
+    LIVE.desire({t:'open',n:round,qid:id,q:Q.q,options:Q.options});
+    upd();
+  } else {
+    side.innerHTML=`<div class="pscan">✋ Show of hands</div><div class="poff">${LIVE?'Set <b>voteUrl</b> in live-config.js to show a QR code.':LIVE_OFF}</div>`;
+  }
+  $('pollHint').textContent=`SPACE: close voting & show answers`;
+  await pollKey();
+
+  // reveal
+  if(url){ LIVE.onUpdate=null; LIVE.desire({t:'close',n:round,answer:Q.correct}); }
+  box.querySelectorAll('.popt').forEach((d,i)=>{
+    d.querySelector('.pn').textContent=url?(total?Math.round(100*counts[i]/total)+'%':'0'):'';
+    d.querySelector('.pf').style.width=url&&total?(100*counts[i]/total)+'%':'0';
+    if(i===Q.correct) d.classList.add('ok');
+  });
+  el.classList.add('reveal'); if(Q.correct!=null) el.classList.add('graded');
+  sfx.win();
+  $('pollHint').textContent=`SPACE: let’s find out`;
+  await pollKey();
+
+  el.classList.add('hidden');
+  flags['poll_'+id]=true; save();
+  mode=prev==='poll'?'world':prev;
+}
+
+const flash=(el,cls)=>{el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);};
+$('lesson').onclick=()=>pressed('ok');
+
+/* ---------------- interaction ---------------- */
+const DIRS={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+const OPP={up:'down',down:'up',left:'right',right:'left'};
+
+async function talkTo(n){
+  n.dir=OPP[player.dir];
+  const who=n.name;
+  if(n.requires&&!flags[n.requires]){ await say(n.requiresMsg,who); return; }
+  if(n.battle&&!flags[n.battle]){
+    NPCS.filter(m=>m.battle===n.battle).forEach(meet);
+    await runPoll(n.battle);
+    if(n.intro) await n.intro(who); else await say(n.pre,who);
+    await runLesson(n.battle);
+    flags[n.battle]=true; updateHud(); save();
+    if(n.onWin) await n.onWin();
+    goNext();
+    return;
+  }
+  if(n.lines&&!flags['talked_'+n.id]){
+    meet(n); await say(n.lines,who);
+    if(n.onTalk) n.onTalk();
+    updateHud(); return;
+  }
+  await say(n.after||n.lines,who);
+}
+
+/* auto-walk to the next scientist after each lesson */
+const ROUTE=['occam','copernicus','galileo','newton','darwin','einstein','bayes'];
+let autoPath=[], autoFace=null;
+function goNext(){
+  const target=ROUTE.map(id=>NPCS.find(m=>m.id===id)).find(m=>!flags[m.battle]);
+  if(!target) return;
+  const key=(x,y)=>x+','+y, ROAD=new Set(['=','G','H','C']);
+  const dist={[key(player.x,player.y)]:0}, prev={}, open=[[player.x,player.y]];
+  let best=null;
+  while(open.length){
+    open.sort((a,b)=>dist[key(...a)]-dist[key(...b)]);
+    const [x,y]=open.shift(), k=key(x,y);
+    if(best&&dist[k]>=best.cost) break;
+    for(const d in DIRS){
+      const [dx,dy]=DIRS[d], nx=x+dx, ny=y+dy;
+      if(nx===target.x&&ny===target.y){ if(!best||dist[k]<best.cost) best={k,face:d,cost:dist[k]}; continue; }
+      if(tileSolid(nx,ny)||npcAt(nx,ny)) continue;
+      const nk=key(nx,ny), nd=dist[k]+(ROAD.has(map[ny][nx])?1:4);
+      if(nk in dist&&dist[nk]<=nd) continue;
+      dist[nk]=nd; prev[nk]={from:k,d}; open.push([nx,ny]);
+    }
+  }
+  if(!best) return;
+  const path=[]; let k=best.k;
+  while(prev[k]){ path.unshift(prev[k].d); k=prev[k].from; }
+  autoPath=path; autoFace=best.face;
+}
+
+/* presenter shortcut: keys 1–7 jump to a stop (earlier stops done, this one and later reset) */
+function jumpTo(i){
+  const target=NPCS.find(m=>m.id===ROUTE[i]);
+  ROUTE.forEach((id,j)=>{
+    const b=NPCS.find(m=>m.id===id).battle;
+    if(j<i){ flags[b]=true; NPCS.filter(m=>m.battle===b).forEach(meet); } else { delete flags[b]; delete flags['poll_'+b]; }
+  });
+  autoPath=[]; autoFace=null; dirStack=[];
+  for(const d of ['down','right','left','up']){
+    const [dx,dy]=DIRS[d], x=target.x+dx, y=target.y+dy;
+    if(!tileSolid(x,y)&&!npcAt(x,y)){ Object.assign(player,{x,y,tx:x,ty:y,t:0,moving:false,dir:OPP[d]}); break; }
+  }
+  updateHud(); checkZone(true); save();
+}
+
+async function interact(){
+  const [dx,dy]=DIRS[player.dir], fx=player.x+dx, fy=player.y+dy;
+  busy=true;
+  try{
+    const n=npcAt(fx,fy);
+    if(n) await talkTo(n);
+    else if(SIGNS[fx+','+fy]) await say([{sys:SIGNS[fx+','+fy]}]);
+    else if(GATES[fx+','+fy]&&!GATES[fx+','+fy].open()){const g=GATES[fx+','+fy]; await say([{sys:typeof g.msg==='function'?g.msg():g.msg}]);}
+  } finally { busy=false; save(); }
+}
+
+/* ---------------- codex & screens ---------------- */
+function openCodex(){
+  mode='codex';
+  const el=$('codex'); el.innerHTML=`<h2>📖 Codex of Simplicity</h2><div class="hint">Figures you have met on your journey. Press C or Esc to close.</div><div class="cards"></div>`;
+  const wrap=el.querySelector('.cards');
+  for(const k of CODEX_ORDER){
+    const e=CODEX[k], known=flags['met_'+k];
+    const card=document.createElement('div'); card.className='card'+(known?'':' unk');
+    const k2=spriteCanvas(known?LOOKS[e.look]:{skin:'#999999',hair:'#777777',robe:'#888888',legs:'#666666'},'down');
+    card.appendChild(k2);
+    const d=document.createElement('div');
+    d.innerHTML=known?`<b>${e.name}</b><i>${e.years}</i><div>${e.text}</div>`:`<b>???</b><i>Not yet met</i>`;
+    card.appendChild(d); wrap.appendChild(card);
+  }
+  el.classList.remove('hidden');
+}
+function closeCodex(){ $('codex').classList.add('hidden'); mode='world'; }
+
+async function showEnd(){
+  const lessons=BATTLE_IDS.filter(b=>flags[b]).reduce((s,b)=>s+BATTLES[b].cards.length,0), met=CODEX_ORDER.filter(k=>flags['met_'+k]).length;
+  mode='end'; paintCanvas($('pCv'),LOOKS.popper,'down');
+  $('popper').classList.remove('hidden'); flash($('popper'),'pop'); sfx.item();
+  await waitOk();
+  $('popper').classList.add('hidden');
+  $('endText').innerHTML=`You carried Occam’s razor from medieval England to Bayes — collecting ${lessons} lessons from ${met} scientists.<br><br>
+  Simple theories aren’t always true. But they tell us more, and they’re easier to test.`;
+  const sp=$('endSprites'); sp.innerHTML='';
+  const NAMES={occam:'Occam',copernicus:'Copernicus',kepler:'Kepler',galileo:'Galileo',newton:'Newton',darwin:'Darwin',wallace:'Wallace',einstein:'Einstein',bayes:'Bayes',popper:'Popper',player:'You'};
+  ['occam','copernicus','kepler','galileo','newton','darwin','wallace','einstein','bayes','popper','player'].forEach(k=>{
+    const f=document.createElement('figure'); f.className='who'; f.innerHTML=`<figcaption>${NAMES[k]}</figcaption>`; f.appendChild(spriteCanvas(LOOKS[k],'down')); sp.appendChild(f);});
+  flags.finished=true; save();
+  mode='end'; $('end').classList.remove('hidden'); sfx.win();
+  await waitOk();
+  $('end').classList.add('hidden'); mode='world';
+}
+
+let bannerTimer=null, lastZone='';
+function zoneOf(x,y){ if(y>=32) return 'Bayes’ Corner · the maths of simplicity'; if(y<=11) return 'Medieval England & the Sun-centred sky'; if(y<=23) return 'The Scientific Revolution · 1600s'; if(x>=24) return 'Einstein’s Study · 1900s'; return 'The Age of Evolution · 1800s'; }
+function checkZone(force){
+  const z=zoneOf(player.x,player.y); if(z===lastZone&&!force) return; lastZone=z;
+  const b=$('banner'); b.textContent=z; b.classList.add('on');
+  clearTimeout(bannerTimer); bannerTimer=setTimeout(()=>b.classList.remove('on'),2600);
+}
+
+/* ---------------- input ---------------- */
+const KEYMAP={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',
+  Enter:'ok',Space:'ok',KeyZ:'ok',Escape:'back',KeyX:'back',KeyC:'codex',KeyM:'mute',KeyN:'new',KeyR:'restart',KeyI:'info',Digit1:'s1',Digit2:'s2',Digit3:'s3',Digit4:'s4',Digit5:'s5',Digit6:'s6',Digit7:'s7',
+  Numpad1:'s1',Numpad2:'s2',Numpad3:'s3',Numpad4:'s4',Numpad5:'s5',Numpad6:'s6',Numpad7:'s7'};
+const held={}; let dirStack=[];
+addEventListener('keydown',e=>{
+  const k=KEYMAP[e.code]; if(!k) return; e.preventDefault();
+  if(held[e.code]) return; held[e.code]=true;
+  if(DIRS[k]){ dirStack=dirStack.filter(d=>d!==k); dirStack.push(k); }
+  pressed(k);
+});
+addEventListener('keyup',e=>{ const k=KEYMAP[e.code]; if(!k) return; held[e.code]=false; if(DIRS[k]) dirStack=dirStack.filter(d=>d!==k); });
+addEventListener('blur',()=>{ for(const c in held) held[c]=false; dirStack=[]; });
+
+function pressed(k){
+  initAudio();
+  if(k==='mute'){ toggleSound(); return; }
+  if(mode==='dice'){ if(diceHandler) diceHandler(k); return; }
+  if(mode==='poll'){ if(pollHandler) pollHandler(k); return; }
+  if(k==='info'){ $('lesson').classList.toggle('detail'); return; }
+  if(k==='restart'&&(mode==='world'||mode==='end')&&!busy){ for(const c in held) held[c]=false; restart(); return; }
+  if(k==='ok'){
+    if(typing&&!typing.done){ typing.finish(); return; }
+    if(waiter){ const w=waiter; waiter=null; w.res(); return; }
+  }
+  if(mode==='title'&&k==='new'&&waiter){ wipe(); const w=waiter; waiter=null; w.res(); return; }
+  if(mode==='world'&&!busy&&!player.moving&&/^s[1-7]$/.test(k)){ jumpTo(+k[1]-1); return; }
+  if(mode==='world'&&!busy&&!player.moving){ if(k==='ok') interact(); else if(k==='codex') openCodex(); return; }
+  if(mode==='codex'&&(k==='codex'||k==='back'||k==='ok')) closeCodex();
+}
+
+/* ---------------- loop ---------------- */
+const SPEED=5;
+let idleT=0;
+function update(dt){
+  idleT+=dt;
+  if(idleT>2.2&&mode==='world'){ idleT=0; const cand=NPCS.filter(n=>!n.battle||flags[n.battle]); const n=cand[Math.floor(Math.random()*cand.length)];
+    if(n&&Math.abs(n.x-player.x)+Math.abs(n.y-player.y)>1) n.dir=['up','down','left','right'][Math.floor(Math.random()*4)]; }
+  if(mode!=='world'||busy) return;
+  if(player.moving){
+    player.t+=dt*SPEED;
+    if(player.t>=1){ player.x=player.tx; player.y=player.ty; player.moving=false; player.t=0; checkZone(); }
+  }
+  if(!player.moving){
+    if(dirStack.length){ autoPath=[]; autoFace=null; }   // arrow keys take over
+    const d=autoPath.length?autoPath.shift():dirStack[dirStack.length-1];
+    if(d){
+      player.dir=d; const [dx,dy]=DIRS[d], nx=player.x+dx, ny=player.y+dy;
+      if(!tileSolid(nx,ny)&&!npcAt(nx,ny)){ player.moving=true; player.tx=nx; player.ty=ny; player.t=0; player.parity^=1; }
+      else autoPath=[];
+    } else if(autoFace){ player.dir=autoFace; autoFace=null; save(); }
+  }
+}
+function bubble(sx,sy,kind,t){
+  const x=sx+5, y=sy-15+Math.round(Math.sin(t*4));
+  ctx.fillStyle='#1b1b2a'; ctx.fillRect(x-1,y-1,8,10);
+  ctx.fillStyle=kind==='!'?'#ffd54f':'#ffffff'; ctx.fillRect(x,y,6,8);
+  ctx.fillStyle='#1b1b2a';
+  if(kind==='!'){ctx.fillRect(x+2,y+1,2,4);ctx.fillRect(x+2,y+6,2,1);}
+  else{ctx.fillRect(x+1,y+1,4,1);ctx.fillRect(x+4,y+2,1,2);ctx.fillRect(x+2,y+4,2,1);ctx.fillRect(x+2,y+6,2,1);}
+}
+function render(t){
+  const fx=player.moving?player.x+(player.tx-player.x)*player.t:player.x;
+  const fy=player.moving?player.y+(player.ty-player.y)*player.t:player.y;
+  const ppx=fx*T, ppy=fy*T;
+  const camX=Math.max(0,Math.min(MW*T-VW*T,Math.round(ppx+T/2-VW*T/2)));
+  const camY=Math.max(0,Math.min(MH*T-VH*T,Math.round(ppy+T/2-VH*T/2)));
+  ctx.fillStyle='#2f7d32'; ctx.fillRect(0,0,cv.width,cv.height);
+  const x0=Math.floor(camX/T), y0=Math.floor(camY/T);
+  for(let y=y0;y<=y0+VH;y++) for(let x=x0;x<=x0+VW;x++){ if(y<MH&&x<MW) drawTile(map[y][x],x,y,x*T-camX,y*T-camY,t); }
+  const ents=[];
+  for(const n of NPCS){
+    const sx=n.x*T-camX, sy=n.y*T-camY;
+    if(sx<-T||sy<-T*2||sx>cv.width||sy>cv.height+T) continue;
+    ents.push({y:n.y,f:()=>{
+      drawSprite(ctx,sx,sy-3,LOOKS[n.look],n.dir,0);
+      if(mode==='world'){
+        if(n.battle&&!flags[n.battle]&&(!n.requires||flags[n.requires])) bubble(sx,sy,'!',t);
+        else if(n.codex&&!flags['met_'+n.codex]&&!n.battle) bubble(sx,sy,'?',t);
+      }
+    }});
+  }
+  const frame=player.moving?(player.t<.5?(player.parity?1:2):0):0;
+  ents.push({y:fy+.01,f:()=>drawSprite(ctx,Math.round(ppx-camX),Math.round(ppy-camY)-3,LOOKS.player,player.dir,frame)});
+  ents.sort((a,b)=>a.y-b.y).forEach(e=>e.f());
+}
+let last=performance.now();
+function loop(now){ const dt=Math.min(.05,(now-last)/1000); last=now; update(dt); render(now/1000); requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+
+/* ---------------- boot ---------------- */
+(async()=>{
+  const ts=$('titleSprites');
+  ['occam','copernicus','kepler','galileo','newton','darwin','wallace','einstein','bayes','player'].forEach(k=>ts.appendChild(spriteCanvas(LOOKS[k],'down')));
+  $('endRestart').onclick=restart;
+  const hasSave=load();
+  if(hasSave) $('titlePrompt').textContent='PRESS ENTER TO CONTINUE · N FOR NEW GAME';
+  mode='title';
+  await waitOk();
+  startMusic();
+  $('title').classList.add('hidden'); $('hud').classList.remove('hidden');
+  mode='world'; updateHud(); checkZone(true);
+  if(!flags.intro){
+    flags.intro=true; busy=true;
+    await say([{sys:`Your quest: carry Occam’s razor from medieval England to today — 7 stops, a few lessons each.`},
+      {sys:`Arrows to walk, SPACE to talk. “?” = has a story, “!” = has a lesson for you.`}]);
+    busy=false; save();
+  }
+})();
+})();
+</script>
+</body>
+</html>
