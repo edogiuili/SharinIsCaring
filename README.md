@@ -10,7 +10,7 @@ Before each scientist's lesson, the audience answers a short question on their p
 | --- | --- |
 | ←↑↓→ / WASD | Walk |
 | Space / Enter | Talk, continue, close voting |
-| 1–7 | Jump to a stop |
+| 1–6 | Jump to a stop |
 | C | Codex |
 | I | More detail on a lesson card |
 | R | Restart |

@@ -232,7 +232,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges}
     <div class="tag">A 15-minute journey through the history of simplicity.<br>Walk up to each scientist and reveal the things to remember.</div>
     <div class="sprites" id="titleSprites"></div>
     <div class="blink" id="titlePrompt">PRESS ENTER</div>
-    <div class="keys"><b>←↑↓→</b>/<b>WASD</b> walk &nbsp; <b>Space</b>/<b>Enter</b> talk &nbsp; <b>C</b> codex &nbsp; <b>I</b> more detail &nbsp; <b>1</b>–<b>7</b> jump to a stop &nbsp; <b>R</b> restart &nbsp; <b>M</b> music on/off</div>
+    <div class="keys"><b>←↑↓→</b>/<b>WASD</b> walk &nbsp; <b>Space</b>/<b>Enter</b> talk &nbsp; <b>C</b> codex &nbsp; <b>I</b> more detail &nbsp; <b>1</b>–<b>6</b> jump to a stop &nbsp; <b>R</b> restart &nbsp; <b>M</b> music on/off</div>
     <div class="cite">Based on J. McFadden (2021), <a href="https://johnjoemcfadden.co.uk/books/life-is-simple-how-occams-razor-set-science-free-and-unlocked-the-universe/" target="_blank" rel="noopener"><i>Life Is Simple: How Occam’s Razor Set Science Free and Unlocked the Universe</i></a>.</div>
   </div>
 
@@ -262,7 +262,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges}
 <script>
 (()=>{
 'use strict';
-const T=16, VW=17, VH=13, MW=32, MH=40;
+const T=16, VW=17, VH=13, MW=32, MH=35;
 const $=id=>document.getElementById(id);
 const cv=$('world'); cv.width=VW*T; cv.height=VH*T;
 const ctx=cv.getContext('2d'); ctx.imageSmoothingEnabled=false;
@@ -373,7 +373,6 @@ const LOOKS={
   copernicus:{skin:'#f1c27d',hair:'#3b2a1a',robe:'#8b1e2b',legs:'#222222',hat:'beret',hc:'#1d1d1d'},
   tycho:{skin:'#f1c27d',hair:'#c9853b',robe:'#2e4a2e',legs:'#222222',beard:'#c9853b',nose:'#e5c07b'},
   kepler:{skin:'#f1c27d',hair:'#2b1d14',robe:'#1d1d1d',legs:'#111111',beard:'#2b1d14',trim:'#ffffff'},
-  galileo:{skin:'#e9b98c',hair:'#b0b0b0',robe:'#3a2a1a',legs:'#222222',beard:'#b0b0b0'},
   simplicio:{skin:'#f1c27d',hair:'#555555',robe:'#8a7a5a',legs:'#333333',hat:'beret',hc:'#5a3a1a'},
   descartes:{skin:'#f1c27d',hair:'#1d1d1d',robe:'#1d1d1d',legs:'#111111',hat:'wig',trim:'#ffffff',mustache:'#1d1d1d'},
   boyle:{skin:'#f1c27d',hair:'#d8cfb8',robe:'#4a3a6a',legs:'#222222',hat:'wig'},
@@ -449,35 +448,35 @@ const set=(x,y,c)=>{map[y][x]=c;};
 const house=(x,y,w)=>{rect(x,y,w,2,'R');rect(x,y+2,w,1,'W');set(x+1,y+2,'D');};
 const dots=(list,c)=>list.forEach(([x,y])=>set(x,y,c));
 
-rect(2,2,28,8,'.'); rect(2,14,28,8,'.'); rect(2,26,28,6,'.');
+rect(2,2,28,8,'.'); rect(2,12,28,7,'.'); rect(2,21,28,6,'.');
 // Medieval village & the old tower
 house(3,2,4); house(8,2,3); house(13,2,5); rect(21,2,3,3,'T');
 rect(18,8,2,2,'#'); rect(9,8,4,2,',');
 dots([[3,8],[4,9],[15,8],[16,9]],'f');
 // Scientific Revolution
-house(5,14,4); house(10,14,3); house(15,14,3); rect(22,14,2,2,'#'); rect(18,20,4,2,'~');
-dots([[10,20],[11,21],[24,20],[25,21]],'f');
+house(5,12,4); house(10,12,3); house(15,12,3); rect(22,12,2,2,'#'); rect(18,17,4,2,'~');
+dots([[10,17],[11,18],[24,17],[25,18]],'f');
 // 1800s
-rect(14,26,2,2,'#'); rect(8,30,5,2,',');
-dots([[20,27],[21,26]],'f');
+rect(14,21,2,2,'#'); rect(8,25,5,2,',');
+dots([[20,22],[21,21]],'f');
 // roads
-rect(3,6,26,2,'='); rect(27,6,2,12,'='); rect(3,17,26,2,'='); rect(3,18,2,11,'='); rect(3,28,20,2,'=');
+rect(3,6,26,2,'='); rect(27,6,2,10,'='); rect(3,15,26,2,'='); rect(3,16,2,8,'='); rect(3,23,20,2,'=');
 // Einstein's study
-rect(23,26,1,6,'#'); rect(24,26,6,6,'H'); rect(24,29,6,1,'C');
-dots([[24,26],[29,26],[24,31],[29,31]],'P');
+rect(23,21,1,6,'#'); rect(24,21,6,6,'H'); rect(24,24,6,1,'C');
+dots([[24,21],[29,21],[24,26],[29,26]],'P');
 // Bayes' corner
-rect(16,34,14,4,'.'); rect(27,33,1,1,'='); rect(19,34,9,2,'=');
-dots([[17,36],[19,37],[28,36],[29,37]],'f');
+rect(16,29,14,4,'.'); rect(27,28,1,1,'='); rect(19,29,9,2,'=');
+dots([[17,31],[19,32],[28,31],[29,32]],'f');
 
 const SIGNS={
   '6,8':`OCKHAM, England — home of William of Occam.`,
   '20,5':`PTOLEMY’S OLD TOWER — “circles on circles on circles…”`,
   '26,9':`SOUTH: the Scientific Revolution.`,
-  '26,19':`THE SCIENTIFIC REVOLUTION · 1600s`,
-  '6,20':`SOUTH: the 1800s. Only Newton’s seal opens this door.`,
-  '6,30':`THE 1800s · the age of evolution`,
-  '22,27':`EINSTEIN’S STUDY — 1900s.`,
-  '25,36':`BAYES’ CORNER — the maths of simplicity.`,
+  '26,17':`THE SCIENTIFIC REVOLUTION · 1600s`,
+  '6,17':`SOUTH: the 1800s. Only Newton’s seal opens this door.`,
+  '6,25':`THE 1800s · the age of evolution`,
+  '22,22':`EINSTEIN’S STUDY — 1900s.`,
+  '25,31':`BAYES’ CORNER — the maths of simplicity.`,
 };
 for(const k in SIGNS){const [x,y]=k.split(',').map(Number);set(x,y,'S');}
 
@@ -487,9 +486,9 @@ const gate=(x,y,style,open,msg)=>{set(x,y,'G');GATES[x+','+y]={style,open,msg};}
 const g1msg=`A wall of spinning circles blocks the road. Visit Copernicus & Kepler to clear it.`;
 gate(27,11,'epicycle',()=>flags.cosmos,g1msg); gate(28,11,'epicycle',()=>flags.cosmos,g1msg);
 const g2msg=`A door sealed with the word “PRINCIPIA”. Isaac Newton has the key.`;
-gate(3,23,'door',()=>flags.newton,g2msg); gate(4,23,'door',()=>flags.newton,g2msg);
-gate(23,29,'light',()=>flags.evolution,`A golden light blocks the way. Talk to Darwin & Wallace first.`);
-gate(27,32,'light',()=>flags.einstein,`A golden light blocks the way. Talk to Einstein first.`);
+gate(3,20,'door',()=>flags.newton,g2msg); gate(4,20,'door',()=>flags.newton,g2msg);
+gate(23,24,'light',()=>flags.evolution,`A golden light blocks the way. Talk to Darwin & Wallace first.`);
+gate(27,27,'light',()=>flags.einstein,`A golden light blocks the way. Talk to Einstein first.`);
 
 const SOLID=new Set(['#','~','R','W','D','T','P','S']);
 function tileSolid(x,y){
@@ -593,7 +592,7 @@ const CROWNS=(()=>{
   return out;
 })();
 function drawCanopy(x,y,sx,sy){
-  const h=hash(x,y), pal=(y>=22&&y<=33&&x<23)?'j':'g', edge=y+1<MH&&map[y+1][x]!=='#';
+  const h=hash(x,y), pal=(y>=19&&y<=28&&x<23)?'j':'g', edge=y+1<MH&&map[y+1][x]!=='#';
   ctx.drawImage(CROWNS[pal][h%4], sx-5+((h>>3)%5)-2, sy+(edge?-14:-8)+((h>>6)%3)-1);
 }
 
@@ -635,18 +634,6 @@ const DRAW={
     seg(sx,sy,8,7,3,15,'#5e3d27');seg(sx,sy,8,7,13,15,'#5e3d27');seg(sx,sy,8,7,8,15,'#4e3529');
     seg(sx,sy,2,10,14,1,tube,2);seg(sx,sy,1,11,3,10,'#3a2a1a',2);
     const p=pen(sx,sy);p(13,0,3,3,'#e0b84a');p(7,5,2,2,'#e0b84a');},
-  pisa:(sx,sy,t)=>{const p=pen(sx,sy);shadowAt(sx,sy,9,15,8);
-    for(let i=0;i<6;i++){const y=9-i*6,x=1+Math.round(i*.7);p(x,y,13,6,'#f1ece0');p(x,y,13,1,'#cfc6b0');p(x+12,y,1,6,'#d9d1bd');for(let k=0;k<4;k++)p(x+2+k*3,y+2,1,3,'#a69c86');}
-    p(7,-27,9,6,'#f1ece0');p(7,-27,9,1,'#cfc6b0');p(9,-25,1,3,'#a69c86');p(12,-25,1,3,'#a69c86');p(8,-28,7,1,'#cfc6b0');
-    // Galileo's experiment: a heavy and a light ball, dropped together, land together
-    const c=(t%4)/4;
-    if(c<.45){const f=c/.45, by=Math.round(-22+36*f*f); p(19,by,3,3,'#3a3a44'); p(24,by+1,2,2,'#8a8a99');}
-    else if(c<.75){p(19,13,3,3,'#3a3a44');p(24,14,2,2,'#8a8a99');}},
-  ramp:(sx,sy,t)=>{const p=pen(sx,sy);shadowAt(sx,sy,16,15,14);   // Galileo's inclined plane, bells at 1:4:9:16:25
-    p(2,4,2,11,'#6d4c3d');p(28,12,2,3,'#6d4c3d');p(15,8,2,7,'#6d4c3d');
-    seg(sx,sy,1,2,30,11,'#a87c4c',2);seg(sx,sy,1,4,30,13,'#7a5232');
-    [1,4,9,16,25].forEach(k=>{const d=29*k/25,x=Math.round(1+d),y=Math.round(2+9*d/29);p(x,y-3,1,2,'#e0b84a');});
-    const s=Math.min(1,(t%3)/2.2), d=29*s*s; p(Math.round(1+d),Math.round(2+9*d/29)-2,3,3,'#3a3a44');},
   apple:(sx,sy,t)=>{const p=pen(sx,sy);shadowAt(sx,sy,8,15,10);   // Newton's apple tree
     p(6,-2,4,17,'#6d4c3d');p(6,-2,1,17,'#86604a');p(9,-2,1,17,'#4e3529');p(4,14,8,1,'#5e3d27');
     disc(sx,sy,8,-9,13,'#245f28');disc(sx,sy,1,-4,6,'#245f28');disc(sx,sy,15,-4,6,'#245f28');
@@ -660,10 +647,6 @@ const DRAW={
     p(7,1,2,1,'#ffffff');p(3,7,10,1,'#9cc8e8');
     ctx.globalAlpha=.75+.25*Math.sin(t*3);
     ['#ff4d4d','#ff9f1a','#ffe14d','#4dd26b','#4d9fff','#9b5cff'].forEach((c,i)=>p(11,2+i,10+i*2,1,c)); ctx.globalAlpha=1;},
-  boat:(sx,sy,t)=>{const P=pen(sx+Math.round(Math.sin(t*.35)*9),sy+Math.round(Math.sin(t*2)));   // Galileo's ship
-    P(1,12,14,1,'#8fc3ff');P(2,9,12,3,'#7a5232');P(3,12,10,1,'#5e3d27');P(2,9,12,1,'#a87c4c');
-    P(7,-4,1,13,'#5e3d27');for(let i=0;i<10;i++)P(8,-3+i,1+Math.floor(i*.6),1,'#fafafa');for(let i=0;i<7;i++)P(6-Math.floor(i*.5),-1+i,1+Math.floor(i*.5),1,'#ece6d6');
-    P(8,-6,3,2,'#d23b2e');},
   tent:(sx,sy)=>{const p=pen(sx,sy);shadowAt(sx,sy,16,15,15);
     for(let i=0;i<14;i++) p(15-i,1+i,2+i*2,1,'#e8dcb8');
     for(let i=0;i<14;i++) p(16,1+i,1+i,1,'#d4c49a');
@@ -728,16 +711,15 @@ const DRAW={
 prop('well',11,4); prop('hay',17,8); prop('belfry',15,2,[]); prop('chimney',5,2,[]); prop('chimney',10,2,[]);
 // Copernicus & Kepler: the Sun-centred sky
 prop('orrery',25,3); prop('telescope',27,3); prop('armillary',28,5); prop('owl',22,2,[]);
-// Galileo & Newton
-prop('chimney',8,14,[]); prop('chimney',12,14,[]); prop('chimney',17,14,[]);
-prop('pisa',25,16,[[0,0],[0,-1]]); prop('telescope',19,15,[[0,0]],{leather:true}); prop('ramp',2,15,[[0,0],[1,0]]);
-prop('apple',8,21); prop('prism',12,20); prop('boat',18,20,[]);
+// Newton
+prop('chimney',8,12,[]); prop('chimney',12,12,[]); prop('chimney',17,12,[]);
+prop('apple',8,18); prop('prism',12,17);
 // Darwin & Wallace
-prop('tent',5,27,[[0,0],[1,0]]); prop('acacia',10,27); prop('crate',19,26);
+prop('tent',5,22,[[0,0],[1,0]]); prop('acacia',10,22); prop('crate',19,21);
 // Einstein's study
-prop('board',25,26,[[0,0],[1,0],[2,0],[3,0]]); prop('shelf',24,27); prop('clock',29,27); prop('desk',24,30,[[0,0],[1,0]]); prop('violin',29,30);
+prop('board',25,21,[[0,0],[1,0],[2,0],[3,0]]); prop('shelf',24,22); prop('clock',29,22); prop('desk',24,25,[[0,0],[1,0]]); prop('violin',29,25);
 // Bayes' corner
-prop('chapel',16,35,[[0,0],[1,0],[2,0],[0,-1],[1,-1],[2,-1]]); prop('d6',23,37); prop('d60',27,37);
+prop('chapel',16,30,[[0,0],[1,0],[2,0],[0,-1],[1,-1],[2,-1]]); prop('d6',23,32); prop('d60',27,32);
 const SMOKE=PROPS.filter(p=>p.kind==='chimney');
 
 // animals wander inside a box (tile coordinates of their 16×16 cell); they never block the player
@@ -795,16 +777,16 @@ const ADRAW={
 };
 for(let i=0;i<3;i++) animal('sheep',[9,7.8,15.5,8.8],.8);
 for(let i=0;i<2;i++) animal('chicken',[2.2,4.6,9.8,5.1],1.4);
-for(let i=0;i<2;i++) animal('duck',[19.8,19.9,21,20.6],.4);
-animal('dog',[9,19.2,17,20.8],1.8);
-for(let i=0;i<2;i++) animal('giraffe',[7.4,25.9,12.8,26.6],.5);   // right behind Darwin & Wallace
-animal('tortoise',[14,29.8,21.5,30.6],.15);
-for(let i=0;i<3;i++) animal('finch',[16.2,25.6,21.5,26.8],2);
-for(let i=0;i<3;i++) animal('pigeon',[18.5,35.7,28.5,36.8],1.2);
+for(let i=0;i<2;i++) animal('duck',[19.8,16.9,21,17.6],.4);
+animal('dog',[9,17.2,17,18.8],1.8);
+for(let i=0;i<2;i++) animal('giraffe',[7.4,20.9,12.8,21.6],.5);   // right behind Darwin & Wallace
+animal('tortoise',[14,24.8,21.5,25.6],.15);
+for(let i=0;i<3;i++) animal('finch',[16.2,20.6,21.5,21.8],2);
+for(let i=0;i<3;i++) animal('pigeon',[18.5,30.7,28.5,31.8],1.2);
 
 // things drawn above everything: butterflies, chimney smoke, birds overhead
-const FLIES=[[14,8.3,1.5,'#ffd54f'],[4,8.5,1,'#ffffff'],[24.5,20.4,1.2,'#ffffff'],[10,30,1.8,'#3b7dd8'],[11.5,30.3,1.4,'#3b7dd8'],
-  [19,26.4,1.6,'#e07b39'],[7,26.8,1.2,'#ffd54f'],[28.5,36.4,1,'#ffd54f']];
+const FLIES=[[14,8.3,1.5,'#ffd54f'],[4,8.5,1,'#ffffff'],[24.5,17.4,1.2,'#ffffff'],[10,25,1.8,'#3b7dd8'],[11.5,25.3,1.4,'#3b7dd8'],
+  [19,21.4,1.6,'#e07b39'],[7,21.8,1.2,'#ffd54f'],[28.5,31.4,1,'#ffd54f']];
 function drawAmbient(t,camX,camY){
   for(const pr of SMOKE){ const sx=pr.x*T-camX, sy=pr.y*T-camY; if(sx<-32||sx>cv.width+16||sy<-40||sy>cv.height+16) continue;
     for(let k=0;k<4;k++){ const ph=(t*.35+k/4)%1, r=1+ph*3;
@@ -831,7 +813,6 @@ const CODEX={
   occam:{name:'William of Occam',years:'1287–1347',look:'occam',text:`Friar from Ockham, England. Fled the Pope, died in Munich. “Don’t multiply things beyond necessity.”`},
   copernicus:{name:'Nicolaus Copernicus',years:'1473–1543',look:'copernicus',text:`Put the Sun in the centre. Simpler — and, as evidence grew, more correct.`},
   kepler:{name:'Johannes Kepler',years:'1571–1630',look:'kepler',text:`“Nature loves simplicity.” Replaced circles with ellipses.`},
-  galileo:{name:'Galileo Galilei',years:'1564–1642',look:'galileo',text:`You can’t feel steady motion, so the Earth can move. No need for absolute rest: motion is relative.`},
   newton:{name:'Isaac Newton',years:'1643–1727',look:'newton',text:`Laws of motion and gravity: the same rules for apples and planets. Rule No. 1 of his Principia is the razor.`},
   darwin:{name:'Charles Darwin',years:'1809–1882',look:'darwin',text:`Natural selection: one simple mechanism behind the variety of life.`},
   wallace:{name:'Alfred Russel Wallace',years:'1823–1913',look:'wallace',text:`Found natural selection independently. “The theory itself is exceedingly simple.”`},
@@ -859,14 +840,6 @@ const BATTLES={
       d:`E.g. Mars seems to move backwards. That’s just perspective from a moving Earth.`},
     {t:`Simpler — and, in the end, more correct`,s:`Not more accurate at first. But as new evidence came, it fit better.`,
       d:`Kepler’s ellipses gave far more accurate predictions. By Newton’s time (1687), the Sun-centred model was all but proven.`})},
-
-  galileo:{name:'Galileo Galilei',sub:'Astronomer & physicist · 1564–1642',looks:['galileo'],cards:c3(
-    {t:`The ship experiment`,s:`On a ship sailing smoothly, a dropped ball falls straight down, just like on land.`,
-      d:`Critics of Copernicus said: if the Earth moved, falling stones would land behind us. Galileo showed they don’t.`},
-    {t:`No “true” rest needed`,s:`No test can show who is really standing still. Motion only makes sense compared to something.`,
-      d:`So a moving Earth is possible: we simply can’t feel steady motion. The ship moves compared to the shore, and the shore compared to the ship.`},
-    {t:`Same laws, fewer assumptions`,s:`The laws of motion are the same for everyone moving steadily. No “absolute rest” needed.`,
-      d:`Fewer assumptions, same explanations: that’s the razor. Einstein later built on this idea.`})},
 
   newton:{name:'Isaac Newton',sub:'Physicist & mathematician · 1643–1727',looks:['newton'],cards:c3(
     {t:`Gravity and the laws of motion`,s:`Three laws of motion and one law of gravity.`,
@@ -915,8 +888,6 @@ const QUESTIONS={
     options:[`I left them in my coat`,`A ghost hid them`,`A thief took them and put them back`],correct:0},
   cosmos:{q:`When Copernicus put the Sun in the centre, were his predictions better than the old Earth-centred model?`,
     options:[`Yes, much better`,`About the same`,`Much worse`],correct:1},
-  galileo:{q:`You are below deck on a ship sailing smoothly. You drop a ball. Where does it land?`,
-    options:[`Straight below your hand`,`Behind you`,`In front of you`],correct:0},
   newton:{q:`Is the force that makes an apple fall the same one that keeps the Moon in orbit?`,
     options:[`Yes, the same force`,`No, the sky has its own rules`,`Nothing holds the Moon`],correct:0},
   evolution:{q:`Why do giraffes have long necks?`,
@@ -968,7 +939,6 @@ const ARTS=(()=>{
     return `<path d="M${x1} ${y1} L${x2} ${y2}" stroke="${c}" stroke-width="${w}" fill="none"${dash?` stroke-dasharray="${dash}"`:''}/><path d="M${x2-h*Math.cos(a-.5)} ${y2-h*Math.sin(a-.5)} L${x2} ${y2} L${x2-h*Math.cos(a+.5)} ${y2-h*Math.sin(a+.5)}" stroke="${c}" stroke-width="${w}" fill="none"/>`;};
   const poly=(cx,cy,r,n,rot=-Math.PI/2)=>Array.from({length:n},(_,k)=>{const t=rot+k*2*Math.PI/n;return `${(cx+r*Math.cos(t)).toFixed(1)},${(cy+r*Math.sin(t)).toFixed(1)}`;}).join(' ');
   const person=(x,y,c=P)=>`<circle cx="${x}" cy="${y-15}" r="3" fill="#e9b98c" stroke="${I}" stroke-width="1"/><path d="M${x} ${y-12} L${x} ${y-5} M${x} ${y-5} L${x-3} ${y} M${x} ${y-5} L${x+3} ${y} M${x-4} ${y-10} L${x+4} ${y-10}" stroke="${c}" stroke-width="1.8" fill="none"/>`;
-  const waves=(x1,x2,y)=>{let d=`M${x1} ${y}`;for(let x=x1;x<x2;x+=8)d+=` q2 -2.5 4 0 q2 2.5 4 0`;return `<path d="${d} L${x2} 100 L${x1} 100 Z" fill="${SEA}" stroke="${I}" stroke-width="1.1"/>`;};
   const giraffe=(x,b,n,c=G)=>`<path d="M${x-4} ${b} v-7 M${x+4} ${b} v-7" stroke="${I}" stroke-width="1.4"/>`+
     `<path d="M${x+4} ${b-9} L${x+6} ${b-9-n}" stroke="${I}" stroke-width="4"/><path d="M${x+4} ${b-9} L${x+6} ${b-9-n}" stroke="${c}" stroke-width="2.4"/>`+
     `<ellipse cx="${x}" cy="${b-8}" rx="6.5" ry="3.6" fill="${c}" stroke="${I}" stroke-width="1.1"/><circle cx="${x-2}" cy="${b-8.5}" r=".9" fill="${BR}"/><circle cx="${x+2}" cy="${b-7.5}" r=".9" fill="${BR}"/>`+
@@ -1017,22 +987,6 @@ const ARTS=(()=>{
     [0.4,1.2,1.9,2.7,3.3,4.1,4.9,5.6].map(t=>{const[x,y]=ell(t);return `<path d="M${x-2.5} ${y-2.5} l5 5 M${x+2.5} ${y-2.5} l-5 5" stroke="${R}" stroke-width="1.6"/>`;}).join('')+
     `<path d="M8 90 h10" stroke="${P}" stroke-width="1.8"/>`+T(21,92,'ellipse: fits',{size:6.5,a:'start'})+`<path d="M80 90 h10" stroke="${GY}" stroke-width="1.2" stroke-dasharray="3 3"/>`+T(93,92,'circle',{size:6.5,a:'start',fill:GY})+
     `<path d="M50 6 l3 3 M53 6 l-3 3" stroke="${R}" stroke-width="1.4"/>`+T(57,9,'= observations',{size:6,a:'start'}));
-
-  /* Galileo */
-  const galileo1=sv(`<path d="M16 66 L104 66 L92 80 L28 80 Z" fill="${BR}" stroke="${I}" stroke-width="1.4"/>${waves(0,120,82)}`+
-    `<path d="M62 66 V12" stroke="${I}" stroke-width="2"/><path d="M64 16 L64 58 L96 58 Z" fill="${PA}" stroke="${I}" stroke-width="1.3"/>`+
-    `<path d="M56 18 V60" stroke="${R}" stroke-width="1" stroke-dasharray="2 3"/>`+[22,33,44].map(y=>`<circle cx="56" cy="${y}" r="3" fill="${R}" opacity=".3"/>`).join('')+`<circle cx="56" cy="62" r="3.2" fill="${R}" stroke="${I}"/>`+
-    arrow(8,10,34,10,I,1.8)+T(21,20,'steady',{size:6.5})+T(50,36,'falls',{size:6.5,fill:R,a:'end'})+T(50,44,'straight',{size:6.5,fill:R,a:'end'})+T(50,52,'down',{size:6.5,fill:R,a:'end'}));
-  const galileo2=sv(`<path d="M0 72 H50 V100 H0 Z" fill="#a8d47a" stroke="${I}" stroke-width="1.1"/>`+
-    `<path d="M14 72 V58" stroke="${BR}" stroke-width="3"/><circle cx="14" cy="52" r="8" fill="${GR}" stroke="${I}" stroke-width="1.2"/>${person(34,72,BR)}`+
-    `${waves(50,120,76)}<path d="M62 64 L108 64 L102 74 L68 74 Z" fill="${BR}" stroke="${I}" stroke-width="1.2"/>${person(86,64)}`+
-    `<rect x="4" y="8" width="50" height="17" rx="4" fill="#fff" stroke="${I}" stroke-width="1.1"/><path d="M30 25 l3 7 l3 -7" fill="#fff" stroke="${I}" stroke-width="1.1"/><path d="M30.5 24.6 h5" stroke="#fff" stroke-width="1.6"/>`+T(29,19,'You move!',{size:7})+
-    `<rect x="64" y="8" width="52" height="17" rx="4" fill="#fff" stroke="${I}" stroke-width="1.1"/><path d="M84 25 l3 7 l3 -7" fill="#fff" stroke="${I}" stroke-width="1.1"/><path d="M84.5 24.6 h5" stroke="#fff" stroke-width="1.6"/>`+T(90,19,'No, YOU do!',{size:7})+
-    arrow(70,90,104,90,I,1.8)+arrow(42,90,10,90,I,1.8));
-  const lab=x=>`<rect x="${x}" y="12" width="42" height="48" rx="2" fill="#fff" stroke="${I}" stroke-width="1.4"/><path d="M${x+24} 19 V51" stroke="${R}" stroke-width="1" stroke-dasharray="2 3"/><circle cx="${x+24}" cy="19" r="3" fill="${R}" opacity=".35"/><circle cx="${x+24}" cy="54" r="3.2" fill="${R}" stroke="${I}"/><path d="M${x+8} 18 L${x+13} 42" stroke="${I}" stroke-width="1"/><circle cx="${x+13}" cy="42" r="2.6" fill="${P}"/>`;
-  const galileo3=sv(lab(6)+`<path d="M2 61 H52" stroke="${GR}" stroke-width="3"/>`+lab(72)+`<path d="M68 61 L118 61 L111 69 L75 69 Z" fill="${BR}" stroke="${I}" stroke-width="1.2"/>`+arrow(80,5,108,5,I,1.6)+
-    T(60,42,'=',{size:22,fill:P})+T(27,78,'on land',{size:7})+T(93,78,'on a ship',{size:7})+
-    T(60,94,'ABSOLUTE REST',{size:7,fill:GY})+`<path d="M30 91.5 H90" stroke="${R}" stroke-width="1.8"/>`);
 
   /* Newton */
   const newton1=sv(`<path d="M10 22 Q34 15 60 22 V80 Q34 73 10 80 Z" fill="${PA}" stroke="${I}" stroke-width="1.4"/><path d="M60 22 Q86 15 110 22 V80 Q86 73 60 80 Z" fill="${PA}" stroke="${I}" stroke-width="1.4"/>`+
@@ -1102,7 +1056,7 @@ const ARTS=(()=>{
     die6(28,59,14,5)+die60(92,42.5,8.5)+
     T(28,82,'more likely',{size:6.5,fill:'#9a6b00'})+T(92,66,'still possible',{size:6,fill:GY}));
 
-  return {occam:[occam1,occam2,occam3],cosmos:[cosmos1,cosmos2,cosmos3],galileo:[galileo1,galileo2,galileo3],newton:[newton1,newton2,newton3],
+  return {occam:[occam1,occam2,occam3],cosmos:[cosmos1,cosmos2,cosmos3],newton:[newton1,newton2,newton3],
     evolution:[evo1,evo2,evo3],einstein:[ein1,ein2,ein3],bayes:[bayes1,bayes2,bayes3,bayes4,bayes5]};
 })();
 
@@ -1128,24 +1082,19 @@ const NPCS=[
     after:[`“Nature loves simplicity.”`],
     onWin:async()=>{await say([{sys:`The wall of spinning circles dissolves! The road south is open.`}]);}},
 
-  {id:'galileo',name:'Galileo Galilei',x:21,y:17,dir:'down',battle:'galileo',
-    pre:[`Galileo Galilei. People asked me: if the Earth moves, why don’t we feel it?`,
-      `Imagine you are inside a ship on a calm sea. Let me show you.`],
-    after:[`Same laws at any steady speed. No absolute rest needed.`]},
-  {id:'newton',name:'Isaac Newton',x:8,y:17,dir:'down',battle:'newton',requires:'galileo',
-    requiresMsg:[`Isaac Newton. Speak to Galileo first — I stand on his shoulders.`],
+  {id:'newton',name:'Isaac Newton',x:8,y:15,dir:'down',battle:'newton',
     pre:[`Isaac Newton. Gravity — and my first rule of reasoning.`],
     after:[`True and sufficient. Then stop.`],
     onWin:async()=>{await say([{sys:`You got NEWTON’S SEAL! The door south is open.`,sfx:'item'}]);}},
 
-  {id:'darwin',name:'Darwin',x:11,y:28,dir:'down',battle:'evolution',pre:evoPre,
+  {id:'darwin',name:'Darwin',x:11,y:23,dir:'down',battle:'evolution',pre:evoPre,
     after:[`Fewer assumptions, same facts. Occam would approve.`],
     onWin:async()=>{await say([{sys:`A golden light flares to the east: Einstein is waiting.`,sfx:'item'}]);}},
-  {id:'wallace',name:'Wallace',x:12,y:28,dir:'down',battle:'evolution',pre:evoPre,
+  {id:'wallace',name:'Wallace',x:12,y:23,dir:'down',battle:'evolution',pre:evoPre,
     after:[`“The theory itself is exceedingly simple.”`],
     onWin:async()=>{await say([{sys:`A golden light flares to the east: Einstein is waiting.`,sfx:'item'}]);}},
 
-  {id:'einstein',name:'Albert Einstein',x:27,y:29,dir:'left',battle:'einstein',
+  {id:'einstein',name:'Albert Einstein',x:27,y:24,dir:'left',battle:'einstein',
     pre:[`Albert Einstein. For ten years, my complex equations got me nowhere.`,
       `So I changed tack. Here’s what I learned.`],
     after:[`Start simple, then test.`],
@@ -1155,7 +1104,7 @@ const NPCS=[
       await say([{sys:`The golden light below the study fades. One last stop: Bayes.`,sfx:'item'}]);
     }},
 
-  {id:'bayes',name:'Thomas Bayes',x:21,y:34,dir:'down',battle:'bayes',requires:'einstein',
+  {id:'bayes',name:'Thomas Bayes',x:21,y:29,dir:'down',battle:'bayes',requires:'einstein',
     requiresMsg:[`Thomas Bayes. Come back after you’ve met Einstein.`],
     intro:async who=>{
       await say([`Thomas Bayes. Are simpler ideas more likely to be true? Let’s play a game!`],who);
@@ -1174,7 +1123,7 @@ for(const n of NPCS){ if(!n.look) n.look=n.id; n.codex=n.codex||(CODEX[n.id]?n.i
 const npcAt=(x,y)=>NPCS.find(n=>n.x===x&&n.y===y);
 
 /* ---------------- state ---------------- */
-const SAVE='occamsQuest.v3';
+const SAVE='occamsQuest.v4';
 const player={x:5,y:6,dir:'right',moving:false,tx:5,ty:6,t:0,parity:0};
 let mode='title', busy=false;
 function save(){ try{localStorage.setItem(SAVE,JSON.stringify({flags,x:player.x,y:player.y,dir:player.dir}));}catch(e){} }
@@ -1403,8 +1352,8 @@ async function talkTo(n){
   if(n.requires&&!flags[n.requires]){ await say(n.requiresMsg,who); return; }
   if(n.battle&&!flags[n.battle]){
     NPCS.filter(m=>m.battle===n.battle).forEach(meet);
-    await runPoll(n.battle);
     if(n.intro) await n.intro(who); else await say(n.pre,who);
+    await runPoll(n.battle);
     await runLesson(n.battle);
     flags[n.battle]=true; updateHud(); save();
     if(n.onWin) await n.onWin();
@@ -1420,7 +1369,7 @@ async function talkTo(n){
 }
 
 /* auto-walk to the next scientist after each lesson */
-const ROUTE=['occam','copernicus','galileo','newton','darwin','einstein','bayes'];
+const ROUTE=['occam','copernicus','newton','darwin','einstein','bayes'];
 let autoPath=[], autoFace=null;
 function goNext(){
   const target=ROUTE.map(id=>NPCS.find(m=>m.id===id)).find(m=>!flags[m.battle]);
@@ -1447,7 +1396,7 @@ function goNext(){
   autoPath=path; autoFace=best.face;
 }
 
-/* presenter shortcut: keys 1–7 jump to a stop (earlier stops done, this one and later reset) */
+/* presenter shortcut: keys 1–6 jump to a stop (earlier stops done, this one and later reset) */
 function jumpTo(i){
   const target=NPCS.find(m=>m.id===ROUTE[i]);
   ROUTE.forEach((id,j)=>{
@@ -1500,8 +1449,8 @@ async function showEnd(){
   $('endText').innerHTML=`You carried Occam’s razor from medieval England to Bayes — collecting ${lessons} lessons from ${met} scientists.<br><br>
   Simple theories aren’t always true. But they tell us more, and they’re easier to test.`;
   const sp=$('endSprites'); sp.innerHTML='';
-  const NAMES={occam:'Occam',copernicus:'Copernicus',kepler:'Kepler',galileo:'Galileo',newton:'Newton',darwin:'Darwin',wallace:'Wallace',einstein:'Einstein',bayes:'Bayes',popper:'Popper',player:'You'};
-  ['occam','copernicus','kepler','galileo','newton','darwin','wallace','einstein','bayes','popper','player'].forEach(k=>{
+  const NAMES={occam:'Occam',copernicus:'Copernicus',kepler:'Kepler',newton:'Newton',darwin:'Darwin',wallace:'Wallace',einstein:'Einstein',bayes:'Bayes',popper:'Popper',player:'You'};
+  ['occam','copernicus','kepler','newton','darwin','wallace','einstein','bayes','popper','player'].forEach(k=>{
     const f=document.createElement('figure'); f.className='who'; f.innerHTML=`<figcaption>${NAMES[k]}</figcaption>`; f.appendChild(spriteCanvas(LOOKS[k],'down')); sp.appendChild(f);});
   flags.finished=true; save();
   mode='end'; $('end').classList.remove('hidden'); sfx.win();
@@ -1510,7 +1459,7 @@ async function showEnd(){
 }
 
 let bannerTimer=null, lastZone='';
-function zoneOf(x,y){ if(y>=32) return 'Bayes’ Corner · the maths of simplicity'; if(y<=11) return 'Medieval England & the Sun-centred sky'; if(y<=23) return 'The Scientific Revolution · 1600s'; if(x>=24) return 'Einstein’s Study · 1900s'; return 'The Age of Evolution · 1800s'; }
+function zoneOf(x,y){ if(y>=27) return 'Bayes’ Corner · the maths of simplicity'; if(y<=11) return 'Medieval England & the Sun-centred sky'; if(y<=20) return 'The Scientific Revolution · 1600s'; if(x>=24) return 'Einstein’s Study · 1900s'; return 'The Age of Evolution · 1800s'; }
 function checkZone(force){
   const z=zoneOf(player.x,player.y); if(z===lastZone&&!force) return; lastZone=z;
   const b=$('banner'); b.textContent=z; b.classList.add('on');
@@ -1519,8 +1468,8 @@ function checkZone(force){
 
 /* ---------------- input ---------------- */
 const KEYMAP={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',
-  Enter:'ok',Space:'ok',KeyZ:'ok',Escape:'back',KeyX:'back',KeyC:'codex',KeyM:'mute',KeyN:'new',KeyR:'restart',KeyI:'info',Digit1:'s1',Digit2:'s2',Digit3:'s3',Digit4:'s4',Digit5:'s5',Digit6:'s6',Digit7:'s7',
-  Numpad1:'s1',Numpad2:'s2',Numpad3:'s3',Numpad4:'s4',Numpad5:'s5',Numpad6:'s6',Numpad7:'s7'};
+  Enter:'ok',Space:'ok',KeyZ:'ok',Escape:'back',KeyX:'back',KeyC:'codex',KeyM:'mute',KeyN:'new',KeyR:'restart',KeyI:'info',Digit1:'s1',Digit2:'s2',Digit3:'s3',Digit4:'s4',Digit5:'s5',Digit6:'s6',
+  Numpad1:'s1',Numpad2:'s2',Numpad3:'s3',Numpad4:'s4',Numpad5:'s5',Numpad6:'s6'};
 const held={}; let dirStack=[];
 addEventListener('keydown',e=>{
   const k=KEYMAP[e.code]; if(!k) return; e.preventDefault();
@@ -1543,7 +1492,7 @@ function pressed(k){
     if(waiter){ const w=waiter; waiter=null; w.res(); return; }
   }
   if(mode==='title'&&k==='new'&&waiter){ wipe(); const w=waiter; waiter=null; w.res(); return; }
-  if(mode==='world'&&!busy&&!player.moving&&/^s[1-7]$/.test(k)){ jumpTo(+k[1]-1); return; }
+  if(mode==='world'&&!busy&&!player.moving&&/^s[1-6]$/.test(k)){ jumpTo(+k[1]-1); return; }
   if(mode==='world'&&!busy&&!player.moving){ if(k==='ok') interact(); else if(k==='codex') openCodex(); return; }
   if(mode==='codex'&&(k==='codex'||k==='back'||k==='ok')) closeCodex();
 }
@@ -1624,7 +1573,7 @@ requestAnimationFrame(loop);
 /* ---------------- boot ---------------- */
 (async()=>{
   const ts=$('titleSprites');
-  ['occam','copernicus','kepler','galileo','newton','darwin','wallace','einstein','bayes','player'].forEach(k=>ts.appendChild(spriteCanvas(LOOKS[k],'down')));
+  ['occam','copernicus','kepler','newton','darwin','wallace','einstein','bayes','player'].forEach(k=>ts.appendChild(spriteCanvas(LOOKS[k],'down')));
   $('endRestart').onclick=restart;
   const hasSave=load();
   if(hasSave) $('titlePrompt').textContent='PRESS ENTER TO CONTINUE · N FOR NEW GAME';
@@ -1635,7 +1584,7 @@ requestAnimationFrame(loop);
   mode='world'; updateHud(); checkZone(true);
   if(!flags.intro){
     flags.intro=true; busy=true;
-    await say([{sys:`Your quest: carry Occam’s razor from medieval England to today — 7 stops, a few lessons each.`},
+    await say([{sys:`Your quest: carry Occam’s razor from medieval England to today — 6 stops, a few lessons each.`},
       {sys:`Arrows to walk, SPACE to talk. “?” = has a story, “!” = has a lesson for you.`}]);
     busy=false; save();
   }
